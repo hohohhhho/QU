@@ -1,0 +1,22 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/eye_close.png</file>
+        <file>res/eye_open.png</file>
+        <file>res/chat.png</file>
+        <file>res/friend.png</file>
+        <file>res/seek.png</file>
+        <file>res/set.png</file>
+        <file>res/emo.png</file>
+        <file>res/file.png</file>
+        <file>res/more.png</file>
+        <file>res/picture.png</file>
+        <file>res/send.png</file>
+        <file>res/login.png</file>
+        <file>res/group.png</file>
+        <file>res/defualt_profile.png</file>
+        <file>res/loading.gif</file>
+        <file>res/loading2.gif</file>
+        <file>res/sound/msg.mp3</file>
+        <file>res/sound/msg.wav</file>
+    </qresource>
+</RCC>
