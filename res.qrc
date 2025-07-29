@@ -18,5 +18,13 @@
         <file>res/loading2.gif</file>
         <file>res/sound/msg.mp3</file>
         <file>res/sound/msg.wav</file>
+        <file>res/accept.png</file>
+        <file>res/call.png</file>
+        <file>res/shut.png</file>
+        <file>res/volume.png</file>
+        <file>res/voice_only.png</file>
+        <file>res/volume2.png</file>
+        <file>res/volume3.png</file>
+        <file>res/refresh.png</file>
     </qresource>
 </RCC>

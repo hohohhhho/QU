@@ -12,6 +12,9 @@ public:
     ~UserPatcher();
     User m_user;
     bool patchUser(User &user);
+    bool patchGroup(Group& group);
+    bool submit(QByteArray submit_content,
+                std::function<void (const QByteArray &, const QByteArray &)> func_if_success);
 public slots:
     void cleanUp();
 signals:

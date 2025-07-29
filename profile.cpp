@@ -1,5 +1,6 @@
 #include "profile.h"
 
+#include <QLabel>
 #include <QPainter>
 #include <QPainterPath>
 
@@ -11,6 +12,18 @@ Profile::Profile(QWidget *parent)
                         // "border:none;"
                         "}");
     this->setAttribute(Qt::WA_TranslucentBackground);
+    connect(this,&QPushButton::clicked,this,[=](){
+        if(checkable){
+            QLabel* label=new QLabel;
+            label->setAlignment(Qt::AlignCenter);
+            label->setAttribute(Qt::WA_DeleteOnClose);
+            const static int size=512;
+            label->setFixedSize(size,size);
+            QPixmap pxp=this->icon().pixmap(size,size);
+            label->setPixmap(pxp);
+            label->show();
+        }
+    });
 }
 
 void Profile::paintEvent(QPaintEvent *ev)
@@ -45,4 +58,9 @@ void Profile::paintEvent(QPaintEvent *ev)
         // painter.drawEllipse(rect().adjusted(1,1,-1,-1));
     }
     icon().paint(&painter, rect());
+}
+
+void Profile::setCheckPicture(bool on)
+{
+    checkable = on;
 }

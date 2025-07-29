@@ -14,8 +14,13 @@ class ChatPreviewButton : public QWidget
 {
     Q_OBJECT
 public:
-
+    enum Type{
+        user,
+        group
+    }type;
     explicit ChatPreviewButton(User user,QWidget *parent = nullptr);
+    explicit ChatPreviewButton(Group group, QWidget *parent = nullptr);
+
     void paintEvent(QPaintEvent* ev)override;
     void mousePressEvent(QMouseEvent* ev)override;
 
@@ -23,6 +28,7 @@ public:
     void updateState();
 
     User m_user;
+    Group m_group;
     bool isChecked();
 
     QString unique_text;//设置了文字后不再显示消息预览而是显示该文字
@@ -46,6 +52,8 @@ private:
     QVBoxLayout* m_vl2;
     QLabel* label_time;
     QLabel* label_num_msg;
+
+    void init(const QIcon& icon,const QString& name);
 };
 
 #endif // CHATPREVIEWBUTTON_H

@@ -13,12 +13,12 @@ class UserDetail : public QWidget
     Q_OBJECT
 
 public:
-    explicit UserDetail(User user,QWidget *parent = nullptr,bool isfriend=false,bool myself=false);
+    explicit UserDetail(const User& user,QWidget *parent = nullptr,bool isfriend=false,bool myself=false);
     ~UserDetail();
     User m_user;
     bool init();
 signals:
-    void updateUserInfo(User new_user_info,QByteArray data=NULL);
+    void updateUserInfo(const User& new_user_info,QByteArray data=NULL);
     void showTip(const QString& tip);
     void chatWith();
     void addFriend(QString request_msg);

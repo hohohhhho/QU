@@ -20,13 +20,3 @@ AbstractThread::~AbstractThread() {
     delete m_thread;
 }
 
-// 类型擦除的槽函数实现
-
-
-// 模板方法实现（无需元对象识别）
-
-
-// 模板任务分发入口
-
-
-

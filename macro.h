@@ -17,7 +17,8 @@
 
 inline QReadWriteLock mutex_ip;
 inline QMutex mutex_patch_loop;
-inline QString hostip="192.168.163.137";
+// inline QString hostip="192.168.163.137";
+inline QString hostip="127.0.0.1";
 inline quint16 hostport=HOSTPORT;
 // inline QString hostip="13.115.131.56";
 // inline quint16 hostport=12236;
@@ -40,10 +41,6 @@ inline void static patchDatabase(QSqlDatabase& db){
     if(setHostName!=hostip){
         setHostName=hostip;
     }
-    // if(setPort!=hostport){
-    //     setPort=hostport;
-    //     qDebug()<<"更新端口"<<setPort;
-    // }
     mutex_ip.unlock();
     db.setDatabaseName(setDatabaseName);
     db.setHostName(setHostName);
@@ -62,6 +59,21 @@ inline QByteArray static defaultReadSocket(QTcpSocket *socket)
     return content;
 }
 
+class Group{
+public:
+    int id = -1;
+    QString name;
+    QIcon icon;
+    QString intro;
+    int owner;
+    bool operator==(const Group& other)const{
+        return this->id==other.id;
+    }
+    bool isEmpty(){
+        return name.isEmpty() || icon.isNull();
+    }
+};
+
 class User{
 public:
     int id=-1;
@@ -70,18 +82,15 @@ public:
     QString state="在线";
     int likes=0;
     QList<User> friends;
+    QList<Group> groups;
     QList<QPair<User,QString>> friend_request;
-    // User(int id=0,QString nickname="",QIcon icon=QIcon()):id(id),nickname(nickname),icon(icon){
-    //     QSqlDatabase::addDatabase("QMYSQL","load");
-    // }
-    // ~User(){
-    //     QSqlDatabase::removeDatabase("load");
-    // }
 
     bool operator==(const User& other)const{
         return this->id==other.id;
     }
-    // bool patchUser();
+    bool isEmpty(){
+        return nickname.isEmpty() || icon.isNull();
+    }
 };
 
 class Message{
@@ -104,7 +113,8 @@ public:
     }
 
     User sender;
-    User receiver;
+    User receiver_user;
+    Group receiver_group;
     QDateTime time;
     QByteArray msg="";
     QVector<User> vt_group_user;

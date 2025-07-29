@@ -10,7 +10,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
-UserDetail::UserDetail(User user, QWidget *parent, bool isfriend, bool myself)
+UserDetail::UserDetail(const User &user, QWidget *parent, bool isfriend, bool myself)
     : QWidget(parent)
     , ui(new Ui::UserDetail)
 {
@@ -48,31 +48,6 @@ UserDetail::UserDetail(User user, QWidget *parent, bool isfriend, bool myself)
             },[=](){
                 showTip("保存失败");
             });
-            // QByteArray content;
-            // QDataStream out(&content,QIODevice::WriteOnly);
-            // out<<packet;
-
-            // {
-            //     QSqlDatabase db=QSqlDatabase::addDatabase("QMYSQL","savepxp");
-            //     patchDatabase(db);
-            //     if(db.open()){
-            //         QSqlQuery query(db);
-            //         QString sql=QString("update account set profile=:data where id=:id;");
-            //         query.prepare(sql);
-            //         query.bindValue(":id",this->m_user.id);
-            //         query.bindValue(":data",data);
-            //         if(query.exec()){
-            //             emit showTip("图片上传成功");
-            //         }else{
-            //             emit showTip("图片上传失败");
-            //             qDebug()<<"图片上传失败"<<query.lastError();
-            //         }
-            //     }else{
-            //         qWarning()<<"数据库打开失败"<<db.lastError().text();
-            //     }
-            //     db.close();
-            // }
-            // QSqlDatabase::removeDatabase("savepxp");
         });
         connect(ui->btn_left,&QPushButton::clicked,this,[=](){
             ui->stacked_user_info->setCurrentWidget(ui->page_write);
@@ -99,29 +74,6 @@ UserDetail::UserDetail(User user, QWidget *parent, bool isfriend, bool myself)
             },[=](){
                 showTip("保存失败");
             });
-            // {
-            //     QSqlDatabase db=QSqlDatabase::addDatabase("QMYSQL","save_user_info");
-            //     patchDatabase(db);
-            //     if(db.open()){
-            //         QSqlQuery query(db);
-            //         QString sql=QString("update account set nickname=:nickname,state=:state where id=:id;");
-            //         query.prepare(sql);
-            //         query.bindValue(":id",this->m_user.id);
-            //         query.bindValue(":nickname",this->m_user.nickname);
-            //         query.bindValue(":state",this->m_user.state);
-            //         if(query.exec()){
-            //             init();
-            //             emit showTip("保存成功");
-            //         }else{
-            //             emit showTip("保存失败");
-            //             qDebug()<<"保存失败"<<query.lastError();
-            //         }
-            //     }else{
-            //         qWarning()<<"数据库打开失败"<<db.lastError().text();
-            //     }
-            //     db.close();
-            // }
-            // QSqlDatabase::removeDatabase("save_user_info");
         });
         connect(ui->btn_cancel,&QPushButton::clicked,this,[=](){
             ui->stacked_user_info->setCurrentWidget(ui->page_read);
@@ -129,15 +81,8 @@ UserDetail::UserDetail(User user, QWidget *parent, bool isfriend, bool myself)
         });
     }else if(isfriend){
         ui->btn_left->setText("删除好友");
-        connect(ui->btn_prefile,&QPushButton::clicked,this,[=](){
-            QLabel* label=new QLabel;
-            label->setAttribute(Qt::WA_DeleteOnClose);
-            const static int size=512;
-            label->setFixedSize(size,size);
-            QPixmap pxp=this->m_user.icon.pixmap(size,size);
-            label->setPixmap(pxp);
-            label->show();
-        });
+        ui->btn_prefile->setCheckPicture(true);
+
         connect(ui->btn_left,&QPushButton::clicked,this,[=](){
             QDialog* dlg=new QDialog(this);
             QHBoxLayout* hl=new QHBoxLayout(dlg);

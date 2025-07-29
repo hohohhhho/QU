@@ -10,7 +10,11 @@ class Profile : public MyHintPushButton
 public:
     explicit Profile(QWidget *parent = nullptr);
     void paintEvent(QPaintEvent* ev)override;
+
+    void setCheckPicture(bool on);
 signals:
+private:
+    bool checkable = false;
 };
 
 #endif // PROFILE_H

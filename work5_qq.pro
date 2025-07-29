@@ -10,16 +10,10 @@ CONFIG += c++17
 
 SOURCES += \
     abstractthread.cpp \
-    autoheighttextedit.cpp \
-    chatbubble.cpp \
     chatpreviewbutton.cpp \
-    chatview.cpp \
-    chatwidget.cpp \
-    loadwidget.cpp \
-    loginwidget.cpp \
+    groupdetail.cpp \
     main.cpp \
     mainwindow.cpp \
-    mybutton.cpp \
     myhintpushbutton.cpp \
     profile.cpp \
     redpointbutton.cpp \
@@ -30,16 +24,10 @@ SOURCES += \
 
 HEADERS += \
     abstractthread.h \
-    autoheighttextedit.h \
-    chatbubble.h \
     chatpreviewbutton.h \
-    chatview.h \
-    chatwidget.h \
-    loadwidget.h \
-    loginwidget.h \
+    groupdetail.h \
     macro.h \
     mainwindow.h \
-    mybutton.h \
     myhintpushbutton.h \
     profile.h \
     redpointbutton.h \
@@ -49,13 +37,18 @@ HEADERS += \
     userpatcher.h
 
 FORMS += \
-    chatwidget.ui \
-    loginwidget.ui \
+    groupdetail.ui \
     mainwindow.ui \
     userdetail.ui
 
 INCLUDEPATH += $$PWD/emotion_widget
+INCLUDEPATH += $$PWD/camera_widget
+INCLUDEPATH += $$PWD/chat_widget
+INCLUDEPATH += $$PWD/login_widget
 include($$PWD/emotion_widget/emotion.pri)
+include($$PWD/camera_widget/camera.pri)
+include($$PWD/chat_widget/chat.pri)
+include($$PWD/login_widget/login.pri)
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
