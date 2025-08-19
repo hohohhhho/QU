@@ -17,6 +17,8 @@ public:
     explicit GroupDetail(const User& user,const Group &group, QWidget *parent = nullptr);
     ~GroupDetail();
 
+    User m_user;
+    Group m_group;
 
 signals:
     void showTip(const QString& tip);
@@ -24,8 +26,7 @@ signals:
     void chat();
 private:
     Ui::GroupDetail *ui;
-    User m_user;
-    Group m_group;
+
     int role = 0;
     bool edit_mod = false;
     void newSql(const QByteArray &sql, std::function<void (QStringList &)> func_success, std::function<void ()> func_fail=NULL);

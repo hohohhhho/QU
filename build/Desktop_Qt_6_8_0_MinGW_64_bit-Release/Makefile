@@ -250,6 +250,9 @@ Makefile: ../../work5_qq.pro D:/Qt2.0/6.8.0/mingw_64/mkspecs/win32-g++/qmake.con
 		D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/default_pre.prf \
 		D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/win32/default_pre.prf \
 		../../emotion_widget/emotion.pri \
+		../../camera_widget/camera.pri \
+		../../chat_widget/chat.pri \
+		../../login_widget/login.pri \
 		D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/resolve_config.prf \
 		D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/exclusive_builds_post.prf \
 		D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/default_post.prf \
@@ -461,6 +464,9 @@ D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/toolchain.prf:
 D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/default_pre.prf:
 D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/win32/default_pre.prf:
 ../../emotion_widget/emotion.pri:
+../../camera_widget/camera.pri:
+../../chat_widget/chat.pri:
+../../login_widget/login.pri:
 D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/resolve_config.prf:
 D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/exclusive_builds_post.prf:
 D:/Qt2.0/6.8.0/mingw_64/mkspecs/features/default_post.prf:

@@ -97,11 +97,11 @@ Q_CONSTINIT const QMetaObject UserDetail::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<UserDetail, std::true_type>,
         // method 'updateUserInfo'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<User, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const User &, std::false_type>,
         QtPrivate::TypeAndForceComplete<QByteArray, std::false_type>,
         // method 'updateUserInfo'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<User, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const User &, std::false_type>,
         // method 'showTip'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
@@ -134,7 +134,7 @@ void UserDetail::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         {
-            using _t = void (UserDetail::*)(User , QByteArray );
+            using _t = void (UserDetail::*)(const User & , QByteArray );
             if (_t _q_method = &UserDetail::updateUserInfo; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 0;
                 return;
@@ -202,7 +202,7 @@ int UserDetail::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 }
 
 // SIGNAL 0
-void UserDetail::updateUserInfo(User _t1, QByteArray _t2)
+void UserDetail::updateUserInfo(const User & _t1, QByteArray _t2)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 0, _a);

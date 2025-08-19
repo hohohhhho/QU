@@ -63,7 +63,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="res.qrc">
+        <iconset resource="../res.qrc">
          <normaloff>:/res/refresh.png</normaloff>:/res/refresh.png</iconset>
        </property>
        <property name="iconSize">
@@ -149,7 +149,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="res.qrc">
+          <iconset resource="../res.qrc">
            <normaloff>:/res/emo.png</normaloff>:/res/emo.png</iconset>
          </property>
         </widget>
@@ -160,7 +160,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="res.qrc">
+          <iconset resource="../res.qrc">
            <normaloff>:/res/picture.png</normaloff>:/res/picture.png</iconset>
          </property>
         </widget>
@@ -171,7 +171,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="res.qrc">
+          <iconset resource="../res.qrc">
            <normaloff>:/res/file.png</normaloff>:/res/file.png</iconset>
          </property>
         </widget>
@@ -182,7 +182,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="res.qrc">
+          <iconset resource="../res.qrc">
            <normaloff>:/res/call.png</normaloff>:/res/call.png</iconset>
          </property>
         </widget>
@@ -206,7 +206,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="res.qrc">
+          <iconset resource="../res.qrc">
            <normaloff>:/res/more.png</normaloff>:/res/more.png</iconset>
          </property>
         </widget>
@@ -288,7 +288,7 @@
             <string>发送</string>
            </property>
            <property name="icon">
-            <iconset resource="res.qrc">
+            <iconset resource="../res.qrc">
              <normaloff>:/res/send.png</normaloff>:/res/send.png</iconset>
            </property>
           </widget>
@@ -328,7 +328,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="res.qrc"/>
+  <include location="../res.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -16,7 +16,10 @@ UserDetail::UserDetail(const User &user, QWidget *parent, bool isfriend, bool my
 {
     ui->setupUi(this);
     ui->stacked_user_info->setCurrentWidget(ui->page_read);
+
     this->m_user=user;
+
+    ui->btn_like->setText(QString::number(m_user.likes));
 
     connect(ui->btn_chat,&QPushButton::clicked,this,[=](){
         emit chatWith();
@@ -30,8 +33,10 @@ UserDetail::UserDetail(const User &user, QWidget *parent, bool isfriend, bool my
                 return;
             }
             QIcon icon(pxp);
-            ui->btn_prefile->setText("");
+            m_user.icon = icon;
             ui->btn_prefile->setIcon(icon);
+
+            emit updateUserInfo(User(),icon);
 
             QByteArray data;
             QBuffer buffer(&data);
@@ -101,6 +106,14 @@ UserDetail::UserDetail(const User &user, QWidget *parent, bool isfriend, bool my
             hl->addWidget(btn);
             dlg->exec();
         });
+        connect(ui->btn_like,&QPushButton::clicked,this,[=](){
+            int num = ui->btn_like->text().toInt();
+            num++;
+            ui->btn_like->setText(QString::number(num));
+            QByteArray sql = QString("/m/like_user*%1*").arg(m_user.id).toUtf8();
+            newSql(sql,[=](QStringList){});
+        });
+
     }else{
         connect(ui->btn_left,&QPushButton::clicked,this,[=](){
             QDialog* dlg=new QDialog(this);
@@ -128,21 +141,32 @@ UserDetail::~UserDetail()
 
 bool UserDetail::init()
 {
-    if(this->m_user.id>0){
-        if(m_user.nickname.isEmpty()){
-            UserPatcher* userPatcher=new UserPatcher;
-            userPatcher->patchUser(m_user);
-            userPatcher->cleanUp();
-        }
+    if(this->m_user.id <= 0){
+        return  false;
+    }
+
+    auto updateUi = [=](){
         ui->btn_prefile->setIcon(m_user.icon);
         ui->label_nickname->setText(m_user.nickname);
         ui->label_id->setText("id:"+QString::number(m_user.id));
         ui->label_state->setText(m_user.state);
-        update();
-        return true;
+        ui->btn_like->setText(QString::number(m_user.likes));
+    };
+    if(m_user.isEmpty()){
+        UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd){
+            m_user = user_patcherd;
+            updateUi();
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
+        userPatcher->patchUser(m_user);
+
     }else{
-        return false;
+        updateUi();
     }
+    return true;
 }
 void UserDetail::newSql(const QByteArray &sql, std::function<void (QStringList&)> func_success,std::function<void()> func_fail)
 {

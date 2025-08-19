@@ -11,6 +11,7 @@
 #include <QSoundEffect>
 #include <QPointer>
 #include <camerawidget.h>
+#include <QUdpSocket>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -43,7 +44,8 @@ public:
     void showTip(const QString& tip);
     void adjustTipPos(QPoint dpos=QPoint(0,0));
     QByteArray readSocket(QTcpSocket *socket);
-    QPair<int, QByteArray> readMsg(const QByteArray& msg);
+    void readMsg(const QByteArray& msg);
+    void readUdpMsg(const QByteArray& msg);
     // void newSql(const QByteArray& sql="/m/业务类型*参数*",void(*func_success)()=nullptr);
     void newSql(const QByteArray& sql="/m/业务类型*参数*", std::function<void (QStringList &)> func_success=nullptr
                 , std::function<void()> func_fail=nullptr);
@@ -74,7 +76,8 @@ private:
     QPointer<CameraWidget> m_camera_widget;//视频通话窗口
 
     User m_user;
-    QTcpSocket* socket;//与服务器通信套接字
+    QTcpSocket* m_socket_tcp;//与服务器tcp通信的套接字
+    QUdpSocket* m_socket_udp;//与服务器udp通信的套接字
     QList<ChatPreviewButton*> list_chatpreview;//聊天选择好友 按钮列表
     QList<ChatPreviewButton*> list_friend;//好友 按钮列表
     QList<ChatPreviewButton*> list_group;//群聊 按钮列表
@@ -94,6 +97,7 @@ private:
     QLabel* label_wait;//等待加载标签
     // QMutex mutex_friend_request_delete;
     QMutex mutex_read_socket;
+    QMutex mutex_page_group_detail;
     QSoundEffect* sound_msg;//收到消息音效
 };
 #endif // MAINWINDOW_H

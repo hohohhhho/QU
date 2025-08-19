@@ -18,7 +18,7 @@ public:
     User m_user;
     bool init();
 signals:
-    void updateUserInfo(const User& new_user_info,QByteArray data=NULL);
+    void updateUserInfo(const User& new_user_info,const QIcon& data=QIcon());
     void showTip(const QString& tip);
     void chatWith();
     void addFriend(QString request_msg);

@@ -7,6 +7,10 @@
 AutoHeightTextEdit::AutoHeightTextEdit(QWidget *parent)
     : QTextEdit{parent}
 {
+    this->setStyleSheet("QTextEdit{"
+                        "border:none;"
+                        "background-color:transparent;"
+                        "}");
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     // this->setMaximumSize(QWIDGETSIZE_MAX,QWIDGETSIZE_MAX);

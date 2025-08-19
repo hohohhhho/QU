@@ -148,7 +148,7 @@ QPushButton:checked{
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="res.qrc">
+               <iconset resource="../res.qrc">
                 <normaloff>:/res/eye_open.png</normaloff>
                 <normalon>:/res/eye_close.png</normalon>:/res/eye_open.png</iconset>
               </property>
@@ -195,7 +195,7 @@ QPushButton:checked{
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="res.qrc">
+               <iconset resource="../res.qrc">
                 <normaloff>:/res/set.png</normaloff>:/res/set.png</iconset>
               </property>
               <property name="iconSize">
@@ -326,7 +326,7 @@ QPushButton:checked{
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="res.qrc">
+               <iconset resource="../res.qrc">
                 <normaloff>:/res/eye_open.png</normaloff>
                 <normalon>:/res/eye_close.png</normalon>:/res/eye_open.png</iconset>
               </property>
@@ -396,7 +396,7 @@ QPushButton:checked{
                <string/>
               </property>
               <property name="icon">
-               <iconset resource="res.qrc">
+               <iconset resource="../res.qrc">
                 <normaloff>:/res/set.png</normaloff>:/res/set.png</iconset>
               </property>
               <property name="iconSize">
@@ -422,7 +422,7 @@ QPushButton:checked{
   </layout>
  </widget>
  <resources>
-  <include location="res.qrc"/>
+  <include location="../res.qrc"/>
  </resources>
  <connections/>
 </ui>

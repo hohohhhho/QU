@@ -26,5 +26,6 @@
         <file>res/volume2.png</file>
         <file>res/volume3.png</file>
         <file>res/refresh.png</file>
+        <file>res/like.png</file>
     </qresource>
 </RCC>

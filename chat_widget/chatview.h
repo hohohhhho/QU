@@ -5,17 +5,17 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-class ChatView : public QWidget
+class ChatView : public QWidget//聊天气泡显示的区域
 {
     Q_OBJECT
 public:
     explicit ChatView(QWidget *parent = nullptr);
     void paintEvent(QPaintEvent* ev)override;
+    void resizeEvent(QResizeEvent* ev)override;
+
     void init(User m_user, User o_user);
     void init(User my_user, Group group);
 
-    // void addMyMsg(QString message);
-    // void addTheOtherMsg(QString message);
     void addMsg(Message message, bool my);
     void addMsg(Message message, User sender);
 
@@ -25,6 +25,7 @@ private:
     User m_user;
     User o_user;
     Group m_group;
+    QList<QWidget*> list_container;
 };
 
 #endif // CHATVIEW_H

@@ -28,6 +28,7 @@ public:
     void setImage(const QImage& image);
     void setWidgetExchanged(bool isExchanged);
     void setConnected(bool isConnected);
+    bool isConnected(){return connected;};
     void setCaller(bool isCaller);
     bool getIsCaller(){return isCaller;};
     QTime getTime();

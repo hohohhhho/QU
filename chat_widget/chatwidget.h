@@ -27,6 +27,7 @@ public:
     void init(User my_user, Group group, QList<Message> list_msg={});//初始化为群聊聊天窗口
     void addMsg(const QByteArray &msg, bool my, bool unread=false, bool save=true);//添加私聊消息
     void addMsg(const QByteArray &msg, User sender, bool unread=false, bool save=true);//添加群聊消息
+    void updateScrollBar();//更新滚动条到最下方
 
 signals:
     void sendMsg(const QString& text);

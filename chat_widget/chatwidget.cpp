@@ -8,6 +8,7 @@
 #include <QMutex>
 #include <QPainter>
 #include <QScrollBar>
+#include <QTimer>
 
 extern QMutex mutex_chat;
 extern QMap<int,QList<Message>> map_userchat_history;
@@ -50,9 +51,9 @@ ChatWidget::ChatWidget(QWidget *parent)
                 addMsg(text.toUtf8(),m_user);
             }
 
-            QScrollBar* bar=ui->scrollArea_history->verticalScrollBar();
-            bar->setValue(bar->maximum());
             emit sendMsg(text);
+
+            updateScrollBar();
         }
     });
     connect(ui->btn_delete,&QPushButton::clicked,this,[=](){
@@ -77,7 +78,6 @@ ChatWidget::ChatWidget(QWidget *parent)
                     return;
                 }
                 emit sendFile(data);
-                qDebug()<<"ChatWidget:data"<<data;
                 if(type == user){
                     addMsg(data,true);
                 }else if(type == group){
@@ -134,15 +134,23 @@ void ChatWidget::init(User my_user, User other_user, QList<Message> list_msg)
     this->o_user = other_user;
     if(m_user.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched){
+            m_user = user_patched;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchUser(m_user);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
     }
     if(o_user.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched){
+            o_user = user_patched;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchUser(o_user);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
     }
 
     ui->chat_view->init(m_user,o_user);
@@ -166,15 +174,23 @@ void ChatWidget::init(User my_user, Group group, QList<Message> list_msg)
     this->m_group = group;
     if(m_user.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched){
+            m_user = user_patched;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchUser(m_user);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
     }
     if(m_group.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::groupPatchFinished,this,[=](Group group_patched){
+            m_group = group_patched;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchGroup(m_group);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
     }
 
 
@@ -218,6 +234,8 @@ void ChatWidget::addMsg(const QByteArray& msg, bool my ,bool unread,bool save)
         }
     }
 
+    updateScrollBar();
+
     emit updatePreviewState();
 }
 
@@ -225,12 +243,6 @@ void ChatWidget::addMsg(const QByteArray &msg, User sender, bool unread, bool sa
 {
     if(type != group){
         return;
-    }
-    if(sender.isEmpty()){
-        UserPatcher* userPatcher=new UserPatcher;
-        userPatcher->patchUser(sender);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
     }
     Message message;
     message.type = Message::getType(msg);
@@ -252,5 +264,15 @@ void ChatWidget::addMsg(const QByteArray &msg, User sender, bool unread, bool sa
         }
     }
 
+    updateScrollBar();
+
     emit updatePreviewState();
+}
+
+void ChatWidget::updateScrollBar()
+{
+    QTimer::singleShot(50,this,[=](){
+        QScrollBar* bar=ui->scrollArea_history->verticalScrollBar();
+        bar->setValue(bar->maximum());
+    });
 }

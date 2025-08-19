@@ -1,3 +1,4 @@
+#include "chatpreviewbutton.h"
 #include "groupdetail.h"
 #include "ui_groupdetail.h"
 #include "userpatcher.h"
@@ -21,24 +22,44 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
                         "QLineEdit#edit_intro{"
                         "font-size:15px;"
                         "}");
+    QVBoxLayout* layout_scroll = new QVBoxLayout(ui->scrollAreaWidgetContents);
+    layout_scroll->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
+
     this->m_user = user;
     this->m_group = group;
+
+    auto updateUi = [=](){
+        ui->edit_name->setText(m_group.name);
+        ui->edit_intro->setText(m_group.intro);
+        ui->btn_profile->setIcon(m_group.icon);
+    };
     if(m_group.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
-        userPatcher->patchGroup(m_group);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
-    }
-    ui->edit_name->setText(m_group.name);
-    ui->edit_id->setText("群号:"+QString::number(m_group.id));
-    ui->edit_intro->setText(m_group.intro);
-    ui->btn_profile->setIcon(m_group.icon);
+        connect(userPatcher,&UserPatcher::groupPatchFinished,this,[=](Group group_patched){
+            m_group = group_patched;
+            updateUi();
 
-    QString sql = QString("/m/role_of_chatgroup*%1**%2*").arg(m_user.id).arg(group.id);
-    newSql(sql.toUtf8(),[=](QStringList& list){
-        this->role = list[2].toInt();
-        qDebug()<<"群权限"<<role;
-    });
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
+        userPatcher->patchGroup(m_group);
+    }else{
+        updateUi();
+    }
+
+    ui->edit_id->setText("群号:"+QString::number(m_group.id));
+
+    //获取用户在该群聊中的权限
+    {
+        QString sql = QString("/m/role_of_chatgroup*%1**%2*").arg(m_user.id).arg(group.id);
+        newSql(sql.toUtf8(),[=](QStringList& list){
+            this->role = list[2].toInt();
+            qDebug()<<"群权限"<<role;
+        });
+    }
+
+    QString name_origin = ui->edit_name->text();
+    QString intro_origin = ui->edit_intro->text();
 
     switch (role) {
     case 0://非群员
@@ -80,12 +101,14 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
         connect(ui->btn1,&QPushButton::clicked,this,[=](){
             leaveGroup();
         });
-        connect(ui->btn2,&QPushButton::clicked,this,[=](){
+        connect(ui->btn2,&QPushButton::clicked,this,[=]()mutable{
             if(ui->btn2->text() == "编辑群聊"){
                 ui->edit_name->setReadOnly(false);
                 ui->edit_intro->setReadOnly(false);
                 ui->btn2->setText("保存");
                 ui->btn3->setText("取消");
+                name_origin = ui->edit_name->text();
+                intro_origin = ui->edit_intro->text();
             }else if(ui->btn2->text() == "保存"){
                 ui->edit_name->setReadOnly(true);
                 ui->edit_intro->setReadOnly(true);
@@ -101,6 +124,8 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
             }else if(ui->btn3->text() == "取消"){
                 ui->edit_name->setReadOnly(true);
                 ui->edit_intro->setReadOnly(true);
+                ui->edit_name->setText(name_origin);
+                ui->edit_intro->setText(intro_origin);
                 ui->btn2->setText("编辑群聊");
                 ui->btn3->setText("发送消息");
             }
@@ -116,7 +141,7 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
         connect(ui->btn1,&QPushButton::clicked,this,[=](){
 
         });
-        connect(ui->btn2,&QPushButton::clicked,this,[=](){
+        connect(ui->btn2,&QPushButton::clicked,this,[=]()mutable{
             if(ui->btn2->text() == "编辑群聊"){
                 ui->edit_name->setReadOnly(false);
                 ui->edit_intro->setReadOnly(false);
@@ -127,6 +152,8 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
                 ui->edit_intro->setReadOnly(true);
                 ui->btn2->setText("编辑群聊");
                 ui->btn3->setText("发送消息");
+                name_origin = ui->edit_name->text();
+                intro_origin = ui->edit_intro->text();
 
                 modifyGroup();
             }
@@ -137,6 +164,8 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
             }else if(ui->btn3->text() == "取消"){
                 ui->edit_name->setReadOnly(true);
                 ui->edit_intro->setReadOnly(true);
+                ui->edit_name->setText(name_origin);
+                ui->edit_intro->setText(intro_origin);
                 ui->btn2->setText("编辑群聊");
                 ui->btn3->setText("发送消息");
             }
@@ -145,6 +174,41 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
     default:
         qDebug()<<"权限错误"<<role;
         break;
+    }
+
+    //加载成员列表
+    {
+        QString sql = QString("/m/members_of_chatgroup*%1*").arg(group.id);
+        newSql(sql.toUtf8(),[=](QStringList& list){
+            for(int i=2; i+1 < list.size(); i+=2){
+                int id = list[i].toInt();
+                int role = list[i+1].toInt();
+
+                User user;
+                user.id = id;
+
+                if(id > 0){
+                    ChatPreviewButton* btn = new ChatPreviewButton(user,ui->scrollAreaWidgetContents);
+                    layout_scroll->insertWidget(layout_scroll->count()-1,btn);
+
+                    QString unique_text;
+                    switch(role){
+                    case 1:
+                        unique_text = "成员";
+                        break;
+                    case 2:
+                        unique_text = "管理员";
+                        break;
+                    case 3:
+                        unique_text = "群主";
+                        break;
+                    }
+                    btn->unique_text = unique_text;
+                    btn->updateState();
+                }
+            }
+        });
+
     }
 }
 

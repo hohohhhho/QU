@@ -53,7 +53,8 @@ private:
     QLabel* label_time;
     QLabel* label_num_msg;
 
-    void init(const QIcon& icon,const QString& name);
+    // void init(const QIcon& icon,const QString& name);
+    void init();
 };
 
 #endif // CHATPREVIEWBUTTON_H

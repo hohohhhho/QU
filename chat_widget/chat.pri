@@ -1,11 +1,13 @@
 SOURCES += \
     $$PWD/autoheighttextedit.cpp \
+    $$PWD/chatpicturelabel.cpp \
     $$PWD/chatbubble.cpp \
     $$PWD/chatview.cpp \
     $$PWD/chatwidget.cpp
 
 HEADERS += \
     $$PWD/autoheighttextedit.h \
+    $$PWD/chatpicturelabel.h \
     $$PWD/chatbubble.h \
     $$PWD/chatview.h \
     $$PWD/chatwidget.h

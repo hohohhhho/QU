@@ -32,6 +32,7 @@ public:
     QHBoxLayout *horizontalLayout_4;
     QLabel *label_nickname;
     QSpacerItem *horizontalSpacer_3;
+    MyHintPushButton *btn_refresh;
     MyHintPushButton *btn_delete;
     QScrollArea *scrollArea_history;
     QWidget *scrollAreaWidgetContents_history;
@@ -42,6 +43,7 @@ public:
     MyHintPushButton *btn_emo;
     MyHintPushButton *btn_picture;
     MyHintPushButton *btn_file;
+    MyHintPushButton *btn_call;
     QSpacerItem *horizontalSpacer_2;
     MyHintPushButton *btn_more;
     QScrollArea *scrollArea_send;
@@ -78,6 +80,15 @@ public:
         horizontalSpacer_3 = new QSpacerItem(40, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
 
         horizontalLayout_4->addItem(horizontalSpacer_3);
+
+        btn_refresh = new MyHintPushButton(ChatWidget);
+        btn_refresh->setObjectName("btn_refresh");
+        QIcon icon;
+        icon.addFile(QString::fromUtf8(":/res/refresh.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_refresh->setIcon(icon);
+        btn_refresh->setIconSize(QSize(16, 16));
+
+        horizontalLayout_4->addWidget(btn_refresh);
 
         btn_delete = new MyHintPushButton(ChatWidget);
         btn_delete->setObjectName("btn_delete");
@@ -121,27 +132,35 @@ public:
         horizontalLayout_3->setObjectName("horizontalLayout_3");
         btn_emo = new MyHintPushButton(ChatWidget);
         btn_emo->setObjectName("btn_emo");
-        QIcon icon;
-        icon.addFile(QString::fromUtf8(":/res/emo.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
-        btn_emo->setIcon(icon);
+        QIcon icon1;
+        icon1.addFile(QString::fromUtf8(":/res/emo.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_emo->setIcon(icon1);
 
         horizontalLayout_3->addWidget(btn_emo);
 
         btn_picture = new MyHintPushButton(ChatWidget);
         btn_picture->setObjectName("btn_picture");
-        QIcon icon1;
-        icon1.addFile(QString::fromUtf8(":/res/picture.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
-        btn_picture->setIcon(icon1);
+        QIcon icon2;
+        icon2.addFile(QString::fromUtf8(":/res/picture.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_picture->setIcon(icon2);
 
         horizontalLayout_3->addWidget(btn_picture);
 
         btn_file = new MyHintPushButton(ChatWidget);
         btn_file->setObjectName("btn_file");
-        QIcon icon2;
-        icon2.addFile(QString::fromUtf8(":/res/file.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
-        btn_file->setIcon(icon2);
+        QIcon icon3;
+        icon3.addFile(QString::fromUtf8(":/res/file.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_file->setIcon(icon3);
 
         horizontalLayout_3->addWidget(btn_file);
+
+        btn_call = new MyHintPushButton(ChatWidget);
+        btn_call->setObjectName("btn_call");
+        QIcon icon4;
+        icon4.addFile(QString::fromUtf8(":/res/call.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_call->setIcon(icon4);
+
+        horizontalLayout_3->addWidget(btn_call);
 
         horizontalSpacer_2 = new QSpacerItem(40, 20, QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Minimum);
 
@@ -149,9 +168,9 @@ public:
 
         btn_more = new MyHintPushButton(ChatWidget);
         btn_more->setObjectName("btn_more");
-        QIcon icon3;
-        icon3.addFile(QString::fromUtf8(":/res/more.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
-        btn_more->setIcon(icon3);
+        QIcon icon5;
+        icon5.addFile(QString::fromUtf8(":/res/more.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_more->setIcon(icon5);
 
         horizontalLayout_3->addWidget(btn_more);
 
@@ -193,9 +212,9 @@ public:
         horizontalLayout->setObjectName("horizontalLayout");
         btn_send = new QPushButton(ChatWidget);
         btn_send->setObjectName("btn_send");
-        QIcon icon4;
-        icon4.addFile(QString::fromUtf8(":/res/send.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
-        btn_send->setIcon(icon4);
+        QIcon icon6;
+        icon6.addFile(QString::fromUtf8(":/res/send.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_send->setIcon(icon6);
 
         horizontalLayout->addWidget(btn_send);
 
@@ -232,10 +251,12 @@ public:
     {
         ChatWidget->setWindowTitle(QCoreApplication::translate("ChatWidget", "Form", nullptr));
         label_nickname->setText(QCoreApplication::translate("ChatWidget", "\346\230\265\347\247\260", nullptr));
+        btn_refresh->setText(QString());
         btn_delete->setText(QCoreApplication::translate("ChatWidget", "\303\227", nullptr));
         btn_emo->setText(QString());
         btn_picture->setText(QString());
         btn_file->setText(QString());
+        btn_call->setText(QString());
         btn_more->setText(QString());
         btn_send->setText(QCoreApplication::translate("ChatWidget", "\345\217\221\351\200\201", nullptr));
         btn_send_mod->setText(QCoreApplication::translate("ChatWidget", "\342\206\223", nullptr));

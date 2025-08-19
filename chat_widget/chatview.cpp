@@ -6,6 +6,9 @@
 #include <QPainter>
 #include <QTextEdit>
 #include <QLabel>
+#include <QResizeEvent>
+
+#define PROFILESIZE 48
 
 ChatView::ChatView(QWidget *parent)
     : QWidget{parent}
@@ -23,19 +26,38 @@ void ChatView::paintEvent(QPaintEvent *ev)
     painter.fillRect(this->rect(),QColor(244,234,42,50));
 }
 
+void ChatView::resizeEvent(QResizeEvent *ev)
+{
+    for(QWidget*& container : list_container){
+        container->setMaximumWidth(ev->size().width());
+    }
+
+    // QWidget::resizeEvent(ev);
+}
+
 void ChatView::init(User user_receiver, User user_sender)
 {
     this->m_user = user_receiver;
     this->o_user = user_sender;
     if(m_user.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd){
+            m_user = user_patcherd;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchUser(m_user);
-        userPatcher->cleanUp();
     }
     if(o_user.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd){
+            o_user = user_patcherd;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchUser(o_user);
-        userPatcher->cleanUp();
     }
 }
 
@@ -45,35 +67,41 @@ void ChatView::init(User my_user, Group group)
     this->m_group = group;
     if(m_user.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd){
+            m_user = user_patcherd;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchUser(m_user);
-        userPatcher->cleanUp();
     }
     if(m_group.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::groupPatchFinished,this,[=](Group group_patched){
+            m_group = group_patched;
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
         userPatcher->patchGroup(m_group);
-        userPatcher->cleanUp();
     }
 
 }
 
 void ChatView::addMsg(Message message, bool my)
 {
-    QWidget* contain=new QWidget(this);
-    QHBoxLayout* hl=new QHBoxLayout(contain);
+    QWidget* container=new QWidget(this);//气泡一整行的容器（包含头像）
+    QHBoxLayout* hl=new QHBoxLayout(container);
     QVBoxLayout* vl=new QVBoxLayout;
-    Profile* profile=new Profile(contain);
-    // QTextEdit* edit=new QTextEdit(contain);
-    ChatBubble* bubble=new ChatBubble(contain);
+    Profile* profile=new Profile(container);
+    ChatBubble* bubble=new ChatBubble(container);
 
-    profile->setFixedSize(48,48);
-    contain->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-    // contain->setMinimumHeight(64);
-    // contain->setMaximumHeight(128);
-    bubble->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    profile->setFixedSize(PROFILESIZE,PROFILESIZE);
+    container->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     connect(bubble->edit,&AutoHeightTextEdit::updateSize,this,[=](){
         int new_height=qMax(profile->height(),bubble->edit->height());
         bubble->setFixedHeight(new_height);
-        contain->setFixedHeight(new_height);
+        container->setFixedHeight(new_height);
     });
 
     QIcon icon=my?m_user.icon:o_user.icon;
@@ -92,7 +120,6 @@ void ChatView::addMsg(Message message, bool my)
     }
 
     hl->setContentsMargins(0,0,0,0);
-    // hl->setSpacing(0);
     if(my){
         hl->addWidget(bubble,6);
         hl->addLayout(vl,1);
@@ -102,32 +129,43 @@ void ChatView::addMsg(Message message, bool my)
     }
 
     vl->addWidget(profile);
-    vl->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
-    this->vlayout->insertWidget(vlayout->count()-1,contain);
+    vl->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));//给头像控件下方添加弹簧填满多余空间
+    this->vlayout->insertWidget(vlayout->count()-1,container);
+
+    list_container.append(container);//加入列表方便管理
 }
 
 void ChatView::addMsg(Message message, User sender)
 {
-    QWidget* contain=new QWidget(this);
-    QHBoxLayout* hl=new QHBoxLayout(contain);
+    QWidget* container=new QWidget(this);
+    QHBoxLayout* hl=new QHBoxLayout(container);
     QVBoxLayout* vl=new QVBoxLayout;
-    Profile* profile=new Profile(contain);
-    // QTextEdit* edit=new QTextEdit(contain);
-    ChatBubble* bubble=new ChatBubble(contain);
+    Profile* profile=new Profile(container);
+    ChatBubble* bubble=new ChatBubble(container);
 
-    profile->setFixedSize(48,48);
-    contain->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-    // contain->setMinimumHeight(64);
-    // contain->setMaximumHeight(128);
-    bubble->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    profile->setFixedSize(PROFILESIZE,PROFILESIZE);
+    container->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
     connect(bubble->edit,&AutoHeightTextEdit::updateSize,this,[=](){
         int new_height=qMax(profile->height(),bubble->edit->height());
         bubble->setFixedHeight(new_height);
-        contain->setFixedHeight(new_height);
+        container->setFixedHeight(new_height);
     });
 
-    QIcon icon = sender.icon;
-    profile->setIcon(icon);
+    if(sender.isEmpty()){
+        UserPatcher* userPatcher=new UserPatcher;
+        connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd)mutable{
+            sender = user_patcherd;
+            QIcon icon = sender.icon;
+            profile->setIcon(icon);
+
+            userPatcher->cleanUp();
+            userPatcher->deleteLater();
+        });
+        userPatcher->patchUser(m_user);
+    }else{
+        QIcon icon = sender.icon;
+        profile->setIcon(icon);
+    }
 
     if(message.type==Message::MessageType::Text){
         bubble->setText(message.msg);
@@ -152,5 +190,7 @@ void ChatView::addMsg(Message message, User sender)
 
     vl->addWidget(profile);
     vl->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
-    this->vlayout->insertWidget(vlayout->count()-1,contain);
+    this->vlayout->insertWidget(vlayout->count()-1,container);
+
+    list_container.append(container);
 }

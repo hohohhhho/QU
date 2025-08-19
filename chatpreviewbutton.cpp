@@ -14,29 +14,17 @@ ChatPreviewButton::ChatPreviewButton(User user, QWidget *parent)
     : QWidget{parent},m_user(user)
 {
     type = Type::user;
-    if(m_user.nickname.isEmpty()){
-        UserPatcher* userPatcher=new UserPatcher;
-        userPatcher->patchUser(m_user);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
-    }
-    init(user.icon,user.nickname);
+    init();
 }
 
 ChatPreviewButton::ChatPreviewButton(Group group, QWidget *parent)
 : QWidget{parent},m_group(group)
 {
     type = Type::group;
-    if(m_group.name.isEmpty()){
-        UserPatcher* userPatcher=new UserPatcher;
-        userPatcher->patchGroup(m_group);
-        userPatcher->cleanUp();
-        userPatcher->deleteLater();
-    }
-    init(group.icon,group.name);
+    init();
 }
 
-void ChatPreviewButton::init(const QIcon &icon, const QString &name)
+void ChatPreviewButton::init()
 {
     int pad=2;
     this->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Fixed);
@@ -46,11 +34,10 @@ void ChatPreviewButton::init(const QIcon &icon, const QString &name)
     m_hl->setContentsMargins(pad,pad,0,pad);
     m_hl->setSpacing(0);
     Profile* profile=new Profile(this);
-    profile->setFixedSize(64,64);
-    profile->setIcon(icon);
+    profile->setFixedSize(64,64);    
 
     m_vl1=new QVBoxLayout;
-    label_nickname=new QLabel(name,this);
+    label_nickname=new QLabel(this);
     label_nickname->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::MinimumExpanding);
     label_msg=new QLabel(this);
     label_msg->setStyleSheet("QLabel{"
@@ -59,6 +46,40 @@ void ChatPreviewButton::init(const QIcon &icon, const QString &name)
     label_nickname->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
     m_vl1->addWidget(label_nickname);
     m_vl1->addWidget(label_msg);
+
+    if(type == user){
+        if(m_user.isEmpty()){
+            UserPatcher* userPatcher=new UserPatcher;
+            connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched){
+                m_user = user_patched;
+                profile->setIcon(m_user.icon);
+                label_nickname->setText(m_user.nickname);
+
+                userPatcher->cleanUp();
+                userPatcher->deleteLater();
+            });
+            userPatcher->patchUser(m_user);
+        }else{
+            profile->setIcon(m_user.icon);
+            label_nickname->setText(m_user.nickname);
+        }
+    }else  if(type == group){
+        if(m_group.isEmpty()){
+            UserPatcher* userPatcher=new UserPatcher;
+            connect(userPatcher,&UserPatcher::groupPatchFinished,this,[=](Group group_patched){
+                m_group = group_patched;
+                profile->setIcon(m_group.icon);
+                label_nickname->setText(m_group.name);
+
+                userPatcher->cleanUp();
+                userPatcher->deleteLater();
+            });
+            userPatcher->patchGroup(m_group);
+        }else{
+            profile->setIcon(m_group.icon);
+            label_nickname->setText(m_group.name);
+        }
+    }
 
     m_vl2=new QVBoxLayout;
     label_time=new QLabel(this);

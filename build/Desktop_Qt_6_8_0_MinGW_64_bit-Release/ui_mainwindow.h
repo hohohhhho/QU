@@ -139,15 +139,17 @@ public:
     QWidget *page_set_msg;
     QWidget *page_set_null;
     QWidget *page_group;
-    QScrollArea *scrollArea_friend_2;
-    QWidget *scrollAreaWidgetContents_friend_2;
+    QWidget *layoutWidget;
+    QHBoxLayout *vl_group;
+    QScrollArea *scrollArea_group;
+    QWidget *scrollAreaWidgetContents_group;
     QVBoxLayout *verticalLayout_6;
     QHBoxLayout *horizontalLayout_8;
     QLineEdit *edit_seek_group;
     QPushButton *btn_seek_group;
     QPushButton *btn_create_group;
     QSpacerItem *verticalSpacer_5;
-    QStackedWidget *stackedWidget_friend_2;
+    QStackedWidget *stackedWidget_group;
     QWidget *page_seek_result_2;
     QWidget *page_friend_request_2;
     QVBoxLayout *verticalLayout_8;
@@ -156,7 +158,8 @@ public:
     QVBoxLayout *verticalLayout_9;
     QVBoxLayout *vlayout_friend_request_2;
     QSpacerItem *verticalSpacer_6;
-    QWidget *page_user_detail_2;
+    QWidget *page_group_detail;
+    QWidget *widget;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -384,7 +387,7 @@ public:
         scrollArea_friend->setWidgetResizable(true);
         scrollAreaWidgetContents_friend = new QWidget();
         scrollAreaWidgetContents_friend->setObjectName("scrollAreaWidgetContents_friend");
-        scrollAreaWidgetContents_friend->setGeometry(QRect(0, 0, 110, 62));
+        scrollAreaWidgetContents_friend->setGeometry(QRect(0, 0, 229, 580));
         verticalLayout_4 = new QVBoxLayout(scrollAreaWidgetContents_friend);
         verticalLayout_4->setObjectName("verticalLayout_4");
         verticalLayout_4->setContentsMargins(0, 0, 0, 0);
@@ -470,7 +473,12 @@ public:
         scrollArea_preview->setWidgetResizable(true);
         scrollAreaWidgetContents_preview = new QWidget();
         scrollAreaWidgetContents_preview->setObjectName("scrollAreaWidgetContents_preview");
-        scrollAreaWidgetContents_preview->setGeometry(QRect(0, 0, 110, 26));
+        scrollAreaWidgetContents_preview->setGeometry(QRect(0, 0, 229, 580));
+        QSizePolicy sizePolicy2(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(scrollAreaWidgetContents_preview->sizePolicy().hasHeightForWidth());
+        scrollAreaWidgetContents_preview->setSizePolicy(sizePolicy2);
         verticalLayout_2 = new QVBoxLayout(scrollAreaWidgetContents_preview);
         verticalLayout_2->setSpacing(0);
         verticalLayout_2->setObjectName("verticalLayout_2");
@@ -526,7 +534,7 @@ public:
         scrollArea_set->setWidgetResizable(true);
         scrollAreaWidgetContents_set = new QWidget();
         scrollAreaWidgetContents_set->setObjectName("scrollAreaWidgetContents_set");
-        scrollAreaWidgetContents_set->setGeometry(QRect(0, 0, 228, 578));
+        scrollAreaWidgetContents_set->setGeometry(QRect(0, 0, 64, 98));
         verticalLayout_10 = new QVBoxLayout(scrollAreaWidgetContents_set);
         verticalLayout_10->setObjectName("verticalLayout_10");
         verticalLayout_10->setContentsMargins(0, 0, 0, 0);
@@ -839,25 +847,30 @@ public:
         stackedWidget_main->addWidget(page_set);
         page_group = new QWidget();
         page_group->setObjectName("page_group");
-        scrollArea_friend_2 = new QScrollArea(page_group);
-        scrollArea_friend_2->setObjectName("scrollArea_friend_2");
-        scrollArea_friend_2->setGeometry(QRect(0, 0, 229, 582));
-        scrollArea_friend_2->setWidgetResizable(true);
-        scrollAreaWidgetContents_friend_2 = new QWidget();
-        scrollAreaWidgetContents_friend_2->setObjectName("scrollAreaWidgetContents_friend_2");
-        scrollAreaWidgetContents_friend_2->setGeometry(QRect(0, 0, 227, 580));
-        verticalLayout_6 = new QVBoxLayout(scrollAreaWidgetContents_friend_2);
+        layoutWidget = new QWidget(page_group);
+        layoutWidget->setObjectName("layoutWidget");
+        layoutWidget->setGeometry(QRect(0, 0, 701, 581));
+        vl_group = new QHBoxLayout(layoutWidget);
+        vl_group->setObjectName("vl_group");
+        vl_group->setContentsMargins(0, 0, 0, 0);
+        scrollArea_group = new QScrollArea(layoutWidget);
+        scrollArea_group->setObjectName("scrollArea_group");
+        scrollArea_group->setWidgetResizable(true);
+        scrollAreaWidgetContents_group = new QWidget();
+        scrollAreaWidgetContents_group->setObjectName("scrollAreaWidgetContents_group");
+        scrollAreaWidgetContents_group->setGeometry(QRect(0, 0, 229, 577));
+        verticalLayout_6 = new QVBoxLayout(scrollAreaWidgetContents_group);
         verticalLayout_6->setObjectName("verticalLayout_6");
         verticalLayout_6->setContentsMargins(0, 0, 0, 0);
         horizontalLayout_8 = new QHBoxLayout();
         horizontalLayout_8->setObjectName("horizontalLayout_8");
-        edit_seek_group = new QLineEdit(scrollAreaWidgetContents_friend_2);
+        edit_seek_group = new QLineEdit(scrollAreaWidgetContents_group);
         edit_seek_group->setObjectName("edit_seek_group");
         edit_seek_group->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
         horizontalLayout_8->addWidget(edit_seek_group);
 
-        btn_seek_group = new QPushButton(scrollAreaWidgetContents_friend_2);
+        btn_seek_group = new QPushButton(scrollAreaWidgetContents_group);
         btn_seek_group->setObjectName("btn_seek_group");
 
         horizontalLayout_8->addWidget(btn_seek_group);
@@ -865,7 +878,7 @@ public:
 
         verticalLayout_6->addLayout(horizontalLayout_8);
 
-        btn_create_group = new QPushButton(scrollAreaWidgetContents_friend_2);
+        btn_create_group = new QPushButton(scrollAreaWidgetContents_group);
         btn_create_group->setObjectName("btn_create_group");
 
         verticalLayout_6->addWidget(btn_create_group);
@@ -874,13 +887,15 @@ public:
 
         verticalLayout_6->addItem(verticalSpacer_5);
 
-        scrollArea_friend_2->setWidget(scrollAreaWidgetContents_friend_2);
-        stackedWidget_friend_2 = new QStackedWidget(page_group);
-        stackedWidget_friend_2->setObjectName("stackedWidget_friend_2");
-        stackedWidget_friend_2->setGeometry(QRect(240, 30, 411, 521));
+        scrollArea_group->setWidget(scrollAreaWidgetContents_group);
+
+        vl_group->addWidget(scrollArea_group);
+
+        stackedWidget_group = new QStackedWidget(layoutWidget);
+        stackedWidget_group->setObjectName("stackedWidget_group");
         page_seek_result_2 = new QWidget();
         page_seek_result_2->setObjectName("page_seek_result_2");
-        stackedWidget_friend_2->addWidget(page_seek_result_2);
+        stackedWidget_group->addWidget(page_seek_result_2);
         page_friend_request_2 = new QWidget();
         page_friend_request_2->setObjectName("page_friend_request_2");
         verticalLayout_8 = new QVBoxLayout(page_friend_request_2);
@@ -908,10 +923,18 @@ public:
 
         verticalLayout_8->addWidget(scrollArea_friend_request_2);
 
-        stackedWidget_friend_2->addWidget(page_friend_request_2);
-        page_user_detail_2 = new QWidget();
-        page_user_detail_2->setObjectName("page_user_detail_2");
-        stackedWidget_friend_2->addWidget(page_user_detail_2);
+        stackedWidget_group->addWidget(page_friend_request_2);
+        page_group_detail = new QWidget();
+        page_group_detail->setObjectName("page_group_detail");
+        widget = new QWidget(page_group_detail);
+        widget->setObjectName("widget");
+        widget->setGeometry(QRect(90, 150, 120, 80));
+        stackedWidget_group->addWidget(page_group_detail);
+
+        vl_group->addWidget(stackedWidget_group);
+
+        vl_group->setStretch(0, 1);
+        vl_group->setStretch(1, 2);
         stackedWidget_main->addWidget(page_group);
 
         horizontalLayout_3->addWidget(stackedWidget_main);
@@ -922,8 +945,9 @@ public:
 
         retranslateUi(MainWindow);
 
-        stackedWidget_main->setCurrentIndex(3);
+        stackedWidget_main->setCurrentIndex(4);
         stacked_set->setCurrentIndex(0);
+        stackedWidget_group->setCurrentIndex(2);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -985,7 +1009,7 @@ public:
         btn_logout->setText(QCoreApplication::translate("MainWindow", "\351\200\200\345\207\272\347\231\273\345\275\225", nullptr));
         edit_seek_group->setPlaceholderText(QCoreApplication::translate("MainWindow", "\346\220\234\347\264\242\347\276\244\350\201\212", nullptr));
         btn_seek_group->setText(QCoreApplication::translate("MainWindow", "\346\220\234\347\264\242", nullptr));
-        btn_create_group->setText(QCoreApplication::translate("MainWindow", "\345\210\233\345\273\272\346\226\260\347\232\204\345\260\217\347\273\204", nullptr));
+        btn_create_group->setText(QCoreApplication::translate("MainWindow", "\345\210\233\345\273\272\346\226\260\347\232\204\347\276\244\350\201\212", nullptr));
     } // retranslateUi
 
 };

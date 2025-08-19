@@ -87,14 +87,14 @@ LoginWidget::LoginWidget(QWidget *parent)
                 temp_server_mod=ServerMod::Windows;
                 dlg_set->edit_ip->setReadOnly(true);
                 dlg_set->edit_port->setReadOnly(true);
-                dlg_set->edit_ip->setText("172.29.240.1");
+                dlg_set->edit_ip->setText("127.0.0.1");
                 dlg_set->edit_port->setText(QString::number(HOSTPORT));
             }else if(dlg_set->radio_cloud->isChecked()){
                 temp_server_mod=ServerMod::Cloud;
                 dlg_set->edit_ip->setReadOnly(true);
                 dlg_set->edit_port->setReadOnly(true);
-                dlg_set->edit_ip->setText("");
-                dlg_set->edit_port->setText("");
+                dlg_set->edit_ip->setText("8.148.78.104");
+                dlg_set->edit_port->setText(QString::number(HOSTPORT));
             }else if(dlg_set->radio_custom->isChecked()){
                 temp_server_mod=ServerMod::Custom;
                 dlg_set->edit_ip->setReadOnly(false);
@@ -201,45 +201,52 @@ LoginWidget::LoginWidget(QWidget *parent)
 
 
     connect(ui->edit_account_register,&QLineEdit::textEdited,this,[=](const QString& text){
-        QString tip;
+        auto endFunc = [=](QString _tip){
+            ui->label_account->setText(_tip);
+            ui->label_account->show();
+        };
+        if(text.isEmpty()){
+            endFunc("账号不能为空");
+            return;
+        }
         for(const QChar& c:text){
             if( c<'0' || ( c>'9' && c<'A' ) || (c>'Z' && c<'a' && c!='_') || c>'z'){
-                tip="只能使用大小写字母和数字";
-                ui->label_account->setText(tip);
-                ui->label_account->show();
+                endFunc("只能使用大小写字母和数字");
                 return;
             }
         }
+
         if(real_time_detection){
+            QString tip;
             QTcpSocket* socket_same=new QTcpSocket;
             QEventLoop* loop=new QEventLoop;
-            connect(socket_same,&QTcpSocket::readyRead,this,[=,&tip]()mutable{
+            connect(socket_same,&QTcpSocket::readyRead,socket_same,[=,&tip]()mutable{
                 QString data=readSocket(socket_same);
                 QStringList list=data.split('/');
                 if(list.size()<2){
                     qDebug()<<"socket_same list.size()"<<list.size();
                     return;
                 }
-                // qDebug()<<"list"<<list;
                 if(list[1]=="s"){
                     tip="账号已存在";
                 }else if(list[1]=="f"){
-                    tip="";
+                    tip="账号可用";
                 }else{
                     qDebug()<<"data"<<data;
                 }
                 loop->quit();
                 loop->deleteLater();
             });
-            connect(socket_same,&QTcpSocket::errorOccurred,this,[=](QAbstractSocket::SocketError error) {
+            connect(socket_same,&QTcpSocket::errorOccurred,socket_same,[=](QAbstractSocket::SocketError error) {
                 qDebug() <<"Socket Error:"<< error;
                 loop->quit();
                 loop->deleteLater();
             });
             socket_same->connectToHost(QHostAddress(hostip),hostport);
-            QByteArray content=QString("/m/same_account*%1*").arg(text.toInt()).toUtf8();
+            QByteArray content=QString("/m/same_account*%1*").arg(text).toUtf8();
             if(socket_same->state()==QTcpSocket::ConnectingState && !socket_same->waitForConnected(5000)){
                 tip="连接超时";
+                real_time_detection = false;//将自动查询账户功能关闭
                 loop->quit();
                 loop->deleteLater();
             }else{
@@ -247,24 +254,7 @@ LoginWidget::LoginWidget(QWidget *parent)
             }
             loop->exec();
             // qDebug()<<"tip"<<tip;
-            ui->label_account->setText(tip);
-            ui->label_account->show();
-            // QSqlDatabase db=QSqlDatabase::database("query_same");
-            // if(db.open()){
-            //     QSqlQuery query(db);
-            //     QString sql=QString("select id from account where account=:account;");
-            //     query.prepare(sql);
-            //     query.bindValue(":account",text);
-            //     if(query.exec() && query.next()){
-            //         tip="账号已存在";
-            //         ui->label_account->setText(tip);
-            //         ui->label_account->show();
-            //         return;
-            //     }
-            // }else{
-            //     qWarning()<<"数据库打开失败"<<db.lastError().text();
-            // }
-            // db.close();
+            endFunc(tip);
         }
         if(ui->label_account->text().isEmpty()){
             ui->label_account->setVisible(false);
@@ -312,6 +302,13 @@ LoginWidget::LoginWidget(QWidget *parent)
             ui->edit_password->setEchoMode(QLineEdit::Password);
         }else{
             ui->edit_password->setEchoMode(QLineEdit::Normal);
+        }
+    });
+    connect(ui->btn_password_register,&QPushButton::clicked,this,[=](){
+        if(ui->btn_password_register->isChecked()==false){
+            ui->edit_password_register->setEchoMode(QLineEdit::Password);
+        }else{
+            ui->edit_password_register->setEchoMode(QLineEdit::Normal);
         }
     });
 
@@ -443,8 +440,6 @@ LoginWidget::LoginWidget(QWidget *parent)
         socket->connectToHost(QHostAddress(hostip),hostport);
         qDebug()<<"login-hostip"<<hostip<<"hostport"<<hostport;
         QByteArray content=QString("/m/login*%1**%2*").arg(account,password).toUtf8();
-        // content = QString("*%1*%2").arg(content.size()).arg(content).toUtf8();
-        // socket->write(content);
         if(socket->state()==QTcpSocket::ConnectingState && !socket->waitForConnected(5000)){
             QMessageBox::warning(this,"提示","连接超时");
         }else{
@@ -470,28 +465,10 @@ void LoginWidget::paintEvent(QPaintEvent *ev)
 
 QByteArray LoginWidget::readSocket(QTcpSocket *socket)
 {
-    // QByteArray content;
-    // QDataStream in(socket);
-    // in.setVersion(QDataStream::Qt_6_8);
-    // quint64 size;
-
-
-    // while(true){
-    //     if(static_cast<quint64>(in.device()->bytesAvailable()) < sizeof(size)){
-    //         return "";
-    //     }
-    //     in>>size;
-    //     content.resize(size);
-    //     if(static_cast<quint64>(in.device()->bytesAvailable()) < size){
-    //         return "";
-    //     }
-    //     in>>content;
-    // }
-    // return content;
     static QHash<QTcpSocket*, quint32> expectedSizes;  // 跟踪每个socket的待接收长度
 
     QDataStream in(socket);
-    in.setVersion(QDataStream::Qt_6_8);  // 必须与服务器一致
+    in.setVersion(QDataStream::Qt_5_15);
 
     // // 阶段1：读取长度头
     // if (!expectedSizes.contains(socket)) {
@@ -506,31 +483,18 @@ QByteArray LoginWidget::readSocket(QTcpSocket *socket)
     //     return QByteArray();  // 数据不足，等待下次
 
     QByteArray content;
-    in>>content;  // 直接读取原始字节
+    in>>content;
 
     expectedSizes.remove(socket);
-    return content;  // 返回纯内容（不含长度头）
+    return content;
 }
 
 void LoginWidget::sendMsg(QTcpSocket* socket,const QByteArray &msg)
 {
-    // QByteArray buffer;
-    // QDataStream out(&buffer,QIODevice::WriteOnly);
-    // out.setVersion(QDataStream::Qt_6_8);
-    // out<<quint64(0)<<msg;
-    // out.device()->seek(0);
-    // out<<quint64(out.device()->size()-sizeof(quint64));
-
-    // socket->write(buffer);
     QByteArray buffer;
     QDataStream out(&buffer, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_6_8);
+    out.setVersion(QDataStream::Qt_5_15);
     out<<msg;
-    // out << quint64(0);
-    // out.writeRawData(msg.constData(), msg.size());
-
-    // out.device()->seek(0);
-    // out << quint64(block.size() - sizeof(quint64));
 
     socket->write(buffer);
 }
