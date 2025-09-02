@@ -6,7 +6,7 @@
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "../../../loginwidget.h"
+#include "../../../login_widget/loginwidget.h"
 #include <QtGui/qtextcursor.h>
 #include <QtCore/qmetatype.h>
 

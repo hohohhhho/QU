@@ -66,7 +66,7 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
         ui->btn1->setText("加入群聊");
         ui->btn2->setVisible(false);
         ui->btn3->setVisible(false);
-        ui->btn_profile->setCheckPicture(true);
+        ui->btn_profile->setPictureCheckable(true);
         connect(ui->btn1,&QPushButton::clicked,this,[=](){
             int id_user = m_user.id;
             int id_group = group.id;
@@ -83,7 +83,7 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
         ui->btn1->setText("退出群聊");
         ui->btn2->setText("发送消息");
         ui->btn3->setVisible(false);
-        ui->btn_profile->setCheckPicture(true);
+        ui->btn_profile->setPictureCheckable(true);
         connect(ui->btn1,&QPushButton::clicked,this,[=](){
             leaveGroup();
         });
@@ -179,15 +179,18 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
     //加载成员列表
     {
         QString sql = QString("/m/members_of_chatgroup*%1*").arg(group.id);
-        newSql(sql.toUtf8(),[=](QStringList& list){
+        // QMap<int,int> map_member;//成员表<id,role>
+        newSql(sql.toUtf8(),[=](QStringList& list)mutable{
             for(int i=2; i+1 < list.size(); i+=2){
                 int id = list[i].toInt();
                 int role = list[i+1].toInt();
 
+                // map_member.insert(id,role);
                 User user;
                 user.id = id;
 
                 if(id > 0){
+                    qDebug()<<"加载ChatPreviewButton";
                     ChatPreviewButton* btn = new ChatPreviewButton(user,ui->scrollAreaWidgetContents);
                     layout_scroll->insertWidget(layout_scroll->count()-1,btn);
 
@@ -205,11 +208,43 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
                     }
                     btn->unique_text = unique_text;
                     btn->updateState();
+
+                    QApplication::processEvents();
                 }
             }
         });
+        // QTimer::singleShot(10,this,[=](){
+        //     qDebug()<<"map_member size"<<map_member.size();
+        //     for(auto it=map_member.begin() ; it!=map_member.constEnd() ;++it){//map的键即为id
+        //         int id = it.key();
+        //         int role = it.value();
+        //         User user;
+        //         user.id = id;
 
+        //         if(id > 0){
+        //             qDebug()<<"加载ChatPreviewButton";
+        //             ChatPreviewButton* btn = new ChatPreviewButton(user,ui->scrollAreaWidgetContents);
+        //             layout_scroll->insertWidget(layout_scroll->count()-1,btn);
+
+        //             QString unique_text;
+        //             switch(role){
+        //             case 1:
+        //                 unique_text = "成员";
+        //                 break;
+        //             case 2:
+        //                 unique_text = "管理员";
+        //                 break;
+        //             case 3:
+        //                 unique_text = "群主";
+        //                 break;
+        //             }
+        //             btn->unique_text = unique_text;
+        //             btn->updateState();
+        //         }
+        //     }
+        // });
     }
+    qDebug()<<"GroupDetail构建完成";
 }
 
 GroupDetail::~GroupDetail()

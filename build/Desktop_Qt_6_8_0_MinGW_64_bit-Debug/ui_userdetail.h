@@ -10,6 +10,7 @@
 #define UI_USERDETAIL_H
 
 #include <QtCore/QVariant>
+#include <QtGui/QIcon>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -17,9 +18,9 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QStackedWidget>
+#include <QtWidgets/QToolButton>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
-#include "myhintpushbutton.h"
 #include "profile.h"
 
 QT_BEGIN_NAMESPACE
@@ -50,7 +51,7 @@ public:
     QLineEdit *edit_nickname;
     QLineEdit *edit_id;
     QLineEdit *edit_state;
-    MyHintPushButton *btn_like;
+    QToolButton *btn_like;
     QStackedWidget *stacked_btn;
     QWidget *page_normal;
     QHBoxLayout *horizontalLayout;
@@ -175,12 +176,15 @@ public:
 
         horizontalLayout_4->addWidget(stacked_user_info);
 
-        btn_like = new MyHintPushButton(widget_4);
+        btn_like = new QToolButton(widget_4);
         btn_like->setObjectName("btn_like");
-        sizePolicy.setHeightForWidth(btn_like->sizePolicy().hasHeightForWidth());
-        btn_like->setSizePolicy(sizePolicy);
         btn_like->setMinimumSize(QSize(64, 64));
-        btn_like->setMaximumSize(QSize(32, 32));
+        btn_like->setMaximumSize(QSize(64, 64));
+        btn_like->setBaseSize(QSize(64, 64));
+        QIcon icon;
+        icon.addFile(QString::fromUtf8(":/res/like.png"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+        btn_like->setIcon(icon);
+        btn_like->setToolButtonStyle(Qt::ToolButtonStyle::ToolButtonTextBesideIcon);
 
         horizontalLayout_4->addWidget(btn_like);
 
@@ -269,7 +273,7 @@ public:
         edit_nickname->setPlaceholderText(QCoreApplication::translate("UserDetail", "\346\230\265\347\247\260", nullptr));
         edit_id->setPlaceholderText(QCoreApplication::translate("UserDetail", "id", nullptr));
         edit_state->setPlaceholderText(QCoreApplication::translate("UserDetail", "\347\212\266\346\200\201", nullptr));
-        btn_like->setText(QCoreApplication::translate("UserDetail", "\347\202\271\350\265\236", nullptr));
+        btn_like->setText(QCoreApplication::translate("UserDetail", "0", nullptr));
         btn_left->setText(QCoreApplication::translate("UserDetail", "\346\267\273\345\212\240\345\245\275\345\217\213", nullptr));
         btn_chat->setText(QCoreApplication::translate("UserDetail", "\345\217\221\351\200\201\346\266\210\346\201\257", nullptr));
         btn_save->setText(QCoreApplication::translate("UserDetail", "\344\277\235\345\255\230", nullptr));

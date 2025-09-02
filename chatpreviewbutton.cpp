@@ -59,6 +59,7 @@ void ChatPreviewButton::init()
                 userPatcher->deleteLater();
             });
             userPatcher->patchUser(m_user);
+
         }else{
             profile->setIcon(m_user.icon);
             label_nickname->setText(m_user.nickname);

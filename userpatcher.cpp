@@ -13,6 +13,7 @@ UserPatcher::UserPatcher(QObject *parent)
     this->m_thread=new QThread(this);
     this->moveToThread(m_thread);
     m_thread->start();
+    qDebug()<<"UserPatcher id"<<this->thread();
 }
 
 UserPatcher::~UserPatcher()
@@ -24,87 +25,104 @@ UserPatcher::~UserPatcher()
     }
 }
 
-void UserPatcher::patchGroup(Group group)
+void UserPatcher::patchGroup(Group group, bool blocking)
 {
-    auto processData = [=,&group](const QByteArray& profile,const QByteArray& data){
+    auto patch = [=](){
+        auto processData = [=](const QByteArray& profile,const QByteArray& data)mutable{
 
-        if(profile.isEmpty() && data.isEmpty()){
-            group.name="群聊不存在";
-            group.id=-1;
-            return;
-        }
-        QPixmap pxp;
-        pxp.loadFromData(profile);
-        group.icon=QIcon(pxp);
-        QStringList qstr_list=QString(data).split('/');
-        if(qstr_list.size()<2){
-            qDebug()<<"patchGroup qstr_list"<<qstr_list;
-        }else if(qstr_list[1]=='s'){
-            if(qstr_list.size()==5){
-                QString nickname=qstr_list[2];
-                group.name=nickname;
+            if(profile.isEmpty() && data.isEmpty()){
+                group.name="群聊不存在";
+                group.id=-1;
+                return;
+            }
+            QPixmap pxp;
+            pxp.loadFromData(profile);
+            group.icon=QIcon(pxp);
+            QStringList qstr_list=QString(data).split('/');
+            if(qstr_list.size()<2){
+                qDebug()<<"patchGroup qstr_list"<<qstr_list;
+            }else if(qstr_list[1]=='s'){
+                if(qstr_list.size()==5){
+                    QString nickname=qstr_list[2];
+                    group.name=nickname;
 
-                QString intro=qstr_list[3];
-                group.intro=intro;
+                    QString intro=qstr_list[3];
+                    group.intro=intro;
 
-                int owner = qstr_list[4].toInt();
-                group.owner = owner;
+                    int owner = qstr_list[4].toInt();
+                    group.owner = owner;
 
-                emit groupPatchFinished(group);
+                    emit groupPatchFinished(group);
+                }else{
+                    qDebug()<<"patchGroup qstr_list"<<qstr_list;
+                }
             }else{
                 qDebug()<<"patchGroup qstr_list"<<qstr_list;
             }
-        }else{
-            qDebug()<<"patchGroup qstr_list"<<qstr_list;
-        }
-    };
-    QByteArray submit_content = QString("/m/patch_group*%1*").arg(group.id).toUtf8();
-    if(submit(submit_content,processData)){
-        return;
-    }
-    qDebug()<<"patchGroup加载失败";
-    return;
-}
-
-void UserPatcher::patchUser(User user){
-    auto processData = [=,&user](const QByteArray& profile,const QByteArray& data){
-
-        if(profile.isEmpty() && data.isEmpty()){
-            user.nickname="用户不存在";
-            user.id=-1;
+        };
+        QByteArray submit_content = QString("/m/patch_group*%1*").arg(group.id).toUtf8();
+        if(submit(submit_content,processData)){
             return;
         }
-        QPixmap pxp;
-        pxp.loadFromData(profile);
-        user.icon=QIcon(pxp);
-        QStringList qstr_list=QString(data).split('/');
-        if(qstr_list.size()<2){
-            qDebug()<<"patchUser qstr_list"<<qstr_list;
-        }else if(qstr_list[1]=='s'){
-            if(qstr_list.size()==5){
-                QString nickname=qstr_list[2];
-                user.nickname=nickname;
+        qDebug()<<"patchGroup加载失败";
+        return;
+    };
 
-                QString state=qstr_list[3];
-                user.state=state;
+    if(blocking){
+        patch();
+    }else{
+        QMetaObject::invokeMethod(this,patch);
+    }
+}
 
-                int likes=qstr_list[4].toInt();
-                user.likes=likes;
+void UserPatcher::patchUser(User user, bool blocking){
 
-                emit userPatchFinished(user);
+    auto patch = [=](){
+        auto processData = [=](const QByteArray& profile,const QByteArray& data)mutable{
+
+            if(profile.isEmpty() && data.isEmpty()){
+                user.nickname="用户不存在";
+                user.id=-1;
+                return;
+            }
+            QPixmap pxp;
+            pxp.loadFromData(profile);
+            user.icon=QIcon(pxp);
+            QStringList qstr_list=QString(data).split('/');
+            if(qstr_list.size()<2){
+                qDebug()<<"patchUser qstr_list"<<qstr_list;
+            }else if(qstr_list[1]=='s'){
+                if(qstr_list.size()==5){
+                    QString nickname=qstr_list[2];
+                    user.nickname=nickname;
+
+                    QString state=qstr_list[3];
+                    user.state=state;
+
+                    int likes=qstr_list[4].toInt();
+                    user.likes=likes;
+
+                    emit userPatchFinished(user);
+                }else{
+                    qDebug()<<"patchUser qstr_list"<<qstr_list;
+                }
             }else{
                 qDebug()<<"patchUser qstr_list"<<qstr_list;
             }
-        }else{
-            qDebug()<<"patchUser qstr_list"<<qstr_list;
+        };
+        QByteArray submit_content = QString("/m/patch_user*%1*").arg(user.id).toUtf8();
+        if(submit(submit_content,processData)){
+            return;
         }
-    };
-    QByteArray submit_content = QString("/m/patch_user*%1*").arg(user.id).toUtf8();
-    if(submit(submit_content,processData)){
+        qDebug()<<"patchUser失败";
         return;
+    };
+
+    if(blocking){
+        patch();
+    }else{
+        QMetaObject::invokeMethod(this,patch);
     }
-    qDebug()<<"patchUser失败";
-    return;
 }
 
 bool UserPatcher::submit(QByteArray submit_content, std::function<void (const QByteArray &, const QByteArray &)> func_if_success)
@@ -134,7 +152,7 @@ bool UserPatcher::submit(QByteArray submit_content, std::function<void (const QB
             buffer = buffer.mid(in.device()->pos());
         } else {
             if (in.status() == QDataStream::ReadPastEnd) {
-                qDebug()<<"正常等待更多数据";
+                // qDebug()<<"正常等待更多数据";
             } else if (in.status() == QDataStream::Ok) {
                 qDebug()<<"事务为空";
             } else {

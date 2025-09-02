@@ -21,9 +21,6 @@
 #include <QThread>
 #include <QUdpSocket>
 
-// QMutex mutex_ip;
-// QString host_ip="";
-
 QMutex mutex_chat;
 QMap<int,QList<Message>> map_userchat_history={};
 QMap<int,QList<Message>> map_userchat_unread={};
@@ -453,7 +450,7 @@ void MainWindow::init(int id,QString account,QString password)
         userPatcher->cleanUp();
         userPatcher->deleteLater();
     });
-    userPatcher->patchUser(m_user);
+    userPatcher->patchUser(m_user,true);
 
 
     emit initProgress(0.4f,"加载好友列表");
@@ -643,7 +640,7 @@ QByteArray MainWindow::readSocket(QTcpSocket *socket)
         return content;
     }else{
         if (in.status() == QDataStream::ReadPastEnd) {
-            qDebug()<<"正常等待更多数据";
+            // qDebug()<<"正常等待更多数据";
         }else if (in.status() == QDataStream::Ok) {
             qDebug()<<"事务为空";
         }else {
@@ -813,13 +810,17 @@ void MainWindow::readMsg(const QByteArray &msg)
                 }
             }else if(second_char=='u'){//被同意视频通话
                 if(m_camera_widget){
+                    qDebug()<<"被同意视频通话";
                     m_camera_widget->setConnected(true);
                 }
             }else if(second_char=='i'){//image传输通话图片
-                if(m_camera_widget){
+                if(m_camera_widget && m_camera_widget->isConnected()){
+                    qDebug()<<"收到视频通话帧";
                     QImage image = QImage::fromData(data);
                     m_camera_widget->setImage(image);
                 }
+            }else{
+                qDebug()<<"未定义的second_char"<<second_char;
             }
         }else{
             qWarning()<<"意外的字符fmsg[0]:"<<data[0];
@@ -902,7 +903,7 @@ void MainWindow::addUserDetailWidget(User user)
             isfriend=true;
         }
     }
-    UserDetail* w=new UserDetail(user,ui->page_user_detail,isfriend,user==m_user);
+    UserDetail* w=new UserDetail(user,ui->page_user_detail, isfriend, user==m_user);
     ui->stackedWidget_friend->setCurrentWidget(ui->page_user_detail);
     if(w->init()){
         vl_user_detail->addWidget(w);
@@ -957,6 +958,9 @@ void MainWindow::addUserDetailWidget(User user)
 
 void MainWindow::addGroupDetailWidget(Group group)
 {
+    if(!mutex_page_group_detail.tryLock()){
+        return;
+    }
     for(QObject* oj:ui->page_group_detail->children()){//清除旧的详情窗口
         QWidget* w=dynamic_cast<QWidget*>(oj);
         if(w){
@@ -992,6 +996,7 @@ void MainWindow::addGroupDetailWidget(Group group)
     connect(w,&GroupDetail::showTip,w,[=](QString tip){
         showTip(tip);
     });
+    mutex_page_group_detail.unlock();
 }
 
 void MainWindow::addChatWidget(User user_friend)
@@ -1463,6 +1468,7 @@ void MainWindow::showCameraWidget(const int& id_sender)
         }
     });
     connect(m_camera_widget,&CameraWidget::acceptVideo,this,[=](){
+        showTip("视频通话已接通");
         sendMsg(id_sender,"",'u');
     });
     connect(m_camera_widget,&CameraWidget::hangUp,this,[=](const QTime& time){

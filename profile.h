@@ -11,7 +11,7 @@ public:
     explicit Profile(QWidget *parent = nullptr);
     void paintEvent(QPaintEvent* ev)override;
 
-    void setCheckPicture(bool on);
+    void setPictureCheckable(bool on);
 signals:
 private:
     bool checkable = false;

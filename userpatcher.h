@@ -11,8 +11,8 @@ public:
     explicit UserPatcher(QObject *parent = nullptr);
     ~UserPatcher();
     User m_user;
-    void patchUser(User user);
-    void patchGroup(Group group);
+    void patchUser(User user, bool blocking = false);
+    void patchGroup(Group group, bool blocking = false);
     bool submit(QByteArray submit_content,
                 std::function<void (const QByteArray &, const QByteArray &)> func_if_success);
 public slots:

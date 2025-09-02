@@ -14,6 +14,7 @@ Profile::Profile(QWidget *parent)
     this->setAttribute(Qt::WA_TranslucentBackground);
     connect(this,&QPushButton::clicked,this,[=](){
         if(checkable){
+            qDebug()<<"查看图片";
             QLabel* label=new QLabel;
             label->setAlignment(Qt::AlignCenter);
             label->setAttribute(Qt::WA_DeleteOnClose);
@@ -28,18 +29,6 @@ Profile::Profile(QWidget *parent)
 
 void Profile::paintEvent(QPaintEvent *ev)
 {
-    // MyHintPushButton::paintEvent(ev);
-
-    // QBitmap mask(this->size());
-    // QPainter p(&mask);
-    // mask.fill(Qt::color0);
-    // p.setRenderHint(QPainter::Antialiasing);
-    // p.setBrush(Qt::color1);
-    // p.setPen(Qt::color1);
-    // int pad=4;
-    // p.drawEllipse(pad,pad,this->width()-pad*2,this->height()-pad*2);
-    // this->setMask(mask);
-
     Q_UNUSED(ev);
 
     QPainter painter(this);
@@ -60,7 +49,7 @@ void Profile::paintEvent(QPaintEvent *ev)
     icon().paint(&painter, rect());
 }
 
-void Profile::setCheckPicture(bool on)
+void Profile::setPictureCheckable(bool on)
 {
     checkable = on;
 }

@@ -76,7 +76,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSUserDetailENDCLASS[] = {
       11,    1,   65,    2, 0x06,   11 /* Public */,
 
  // signals: parameters
-    QMetaType::Void, 0x80000000 | 3, QMetaType::QByteArray,    4,    5,
+    QMetaType::Void, 0x80000000 | 3, QMetaType::QIcon,    4,    5,
     QMetaType::Void, 0x80000000 | 3,    4,
     QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void,
@@ -98,7 +98,7 @@ Q_CONSTINIT const QMetaObject UserDetail::staticMetaObject = { {
         // method 'updateUserInfo'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const User &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<QByteArray, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QIcon &, std::false_type>,
         // method 'updateUserInfo'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const User &, std::false_type>,
@@ -123,7 +123,7 @@ void UserDetail::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         auto *_t = static_cast<UserDetail *>(_o);
         (void)_t;
         switch (_id) {
-        case 0: _t->updateUserInfo((*reinterpret_cast< std::add_pointer_t<User>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QByteArray>>(_a[2]))); break;
+        case 0: _t->updateUserInfo((*reinterpret_cast< std::add_pointer_t<User>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QIcon>>(_a[2]))); break;
         case 1: _t->updateUserInfo((*reinterpret_cast< std::add_pointer_t<User>>(_a[1]))); break;
         case 2: _t->showTip((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 3: _t->chatWith(); break;
@@ -134,7 +134,7 @@ void UserDetail::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         {
-            using _t = void (UserDetail::*)(const User & , QByteArray );
+            using _t = void (UserDetail::*)(const User & , const QIcon & );
             if (_t _q_method = &UserDetail::updateUserInfo; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 0;
                 return;
@@ -202,7 +202,7 @@ int UserDetail::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 }
 
 // SIGNAL 0
-void UserDetail::updateUserInfo(const User & _t1, QByteArray _t2)
+void UserDetail::updateUserInfo(const User & _t1, const QIcon & _t2)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 0, _a);

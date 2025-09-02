@@ -6,7 +6,7 @@
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "../../../chatbubble.h"
+#include "../../../chat_widget/chatbubble.h"
 #include <QtGui/qtextcursor.h>
 #include <QtCore/qmetatype.h>
 

@@ -18,11 +18,11 @@
 inline QReadWriteLock mutex_ip;
 inline QMutex mutex_patch_loop;
 // inline QString hostip="192.168.163.137";
-inline QString hostip="8.148.78.104";
+// inline QString hostip="8.148.78.104";
 // inline QString hostip="127.0.0.1";
-inline quint16 hostport=HOSTPORT;
-// inline QString hostip="57.180.185.238";
-// inline quint16 hostport=16159;
+// inline quint16 hostport=HOSTPORT;
+inline QString hostip="57.180.185.238";
+inline quint16 hostport=12745;
 
 enum ServerMod{
     Linux,
@@ -30,7 +30,7 @@ enum ServerMod{
     Cloud,
     Custom
 };
-inline ServerMod server_mod=ServerMod::Cloud;
+inline ServerMod server_mod=ServerMod::Windows;
 
 inline void static patchDatabase(QSqlDatabase& db){
     static QString setDatabaseName("work5_qq");

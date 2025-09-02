@@ -16,6 +16,7 @@ release/camerawidget.o
 release/clocklabel.o
 release/pictureview.o
 release/autoheighttextedit.o
+release/chatpicturelabel.o
 release/chatbubble.o
 release/chatview.o
 release/chatwidget.o
@@ -39,6 +40,7 @@ release/moc_camerawidget.o
 release/moc_clocklabel.o
 release/moc_pictureview.o
 release/moc_autoheighttextedit.o
+release/moc_chatpicturelabel.o
 release/moc_chatbubble.o
 release/moc_chatview.o
 release/moc_chatwidget.o

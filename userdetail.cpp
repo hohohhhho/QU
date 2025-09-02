@@ -86,7 +86,7 @@ UserDetail::UserDetail(const User &user, QWidget *parent, bool isfriend, bool my
         });
     }else if(isfriend){
         ui->btn_left->setText("删除好友");
-        ui->btn_prefile->setCheckPicture(true);
+        ui->btn_prefile->setPictureCheckable(true);
 
         connect(ui->btn_left,&QPushButton::clicked,this,[=](){
             QDialog* dlg=new QDialog(this);
@@ -115,6 +115,7 @@ UserDetail::UserDetail(const User &user, QWidget *parent, bool isfriend, bool my
         });
 
     }else{
+        ui->btn_prefile->setPictureCheckable(true);
         connect(ui->btn_left,&QPushButton::clicked,this,[=](){
             QDialog* dlg=new QDialog(this);
             QHBoxLayout* hl=new QHBoxLayout(dlg);
