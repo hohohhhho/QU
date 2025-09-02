@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     abstractthread.cpp \
+    appupdater.cpp \
     chatpreviewbutton.cpp \
     groupdetail.cpp \
     main.cpp \
@@ -24,6 +25,7 @@ SOURCES += \
 
 HEADERS += \
     abstractthread.h \
+    appupdater.h \
     chatpreviewbutton.h \
     groupdetail.h \
     macro.h \

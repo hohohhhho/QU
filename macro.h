@@ -14,15 +14,15 @@
 #include <QEventLoop>
 
 #define HOSTPORT 8899
+#define WINDOWSIP "127.0.0.1"
+#define LINUXIP "192.168.163.137"
+#define CLOUDIP "57.180.185.238"
 
 inline QReadWriteLock mutex_ip;
 inline QMutex mutex_patch_loop;
-// inline QString hostip="192.168.163.137";
-// inline QString hostip="8.148.78.104";
-// inline QString hostip="127.0.0.1";
 // inline quint16 hostport=HOSTPORT;
-inline QString hostip="57.180.185.238";
-inline quint16 hostport=12745;
+inline QString hostip = CLOUDIP ;
+inline quint16 hostport = 12745;
 
 enum ServerMod{
     Linux,

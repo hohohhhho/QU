@@ -90,11 +90,12 @@ public:
     QScrollArea *scrollArea_set;
     QWidget *scrollAreaWidgetContents_set;
     QVBoxLayout *verticalLayout_10;
-    QVBoxLayout *vl_set;
     QPushButton *btn_custom;
     QPushButton *btn_connect;
     QPushButton *btn_msg;
     QPushButton *btn_account;
+    QPushButton *btn_video_call;
+    QPushButton *btn_about;
     QSpacerItem *verticalSpacer_7;
     QStackedWidget *stacked_set;
     QWidget *page_set_connect;
@@ -137,6 +138,20 @@ public:
     QPushButton *btn_logout;
     QSpacerItem *verticalSpacer_9;
     QWidget *page_set_msg;
+    QWidget *page_set_about;
+    QVBoxLayout *verticalLayout_16;
+    QLabel *label_current_version;
+    QLabel *label_latest_version;
+    QPushButton *btn_update;
+    QSpacerItem *verticalSpacer_10;
+    QWidget *page_set_video_call;
+    QVBoxLayout *verticalLayout_18;
+    QGroupBox *groupBox_3;
+    QVBoxLayout *verticalLayout_17;
+    QRadioButton *radio_call_tcp;
+    QRadioButton *radio_call_udp;
+    QRadioButton *radio_call_p2p;
+    QSpacerItem *verticalSpacer_11;
     QWidget *page_set_null;
     QWidget *page_group;
     QWidget *layoutWidget;
@@ -387,7 +402,7 @@ public:
         scrollArea_friend->setWidgetResizable(true);
         scrollAreaWidgetContents_friend = new QWidget();
         scrollAreaWidgetContents_friend->setObjectName("scrollAreaWidgetContents_friend");
-        scrollAreaWidgetContents_friend->setGeometry(QRect(0, 0, 229, 580));
+        scrollAreaWidgetContents_friend->setGeometry(QRect(0, 0, 110, 62));
         verticalLayout_4 = new QVBoxLayout(scrollAreaWidgetContents_friend);
         verticalLayout_4->setObjectName("verticalLayout_4");
         verticalLayout_4->setContentsMargins(0, 0, 0, 0);
@@ -473,7 +488,7 @@ public:
         scrollArea_preview->setWidgetResizable(true);
         scrollAreaWidgetContents_preview = new QWidget();
         scrollAreaWidgetContents_preview->setObjectName("scrollAreaWidgetContents_preview");
-        scrollAreaWidgetContents_preview->setGeometry(QRect(0, 0, 229, 580));
+        scrollAreaWidgetContents_preview->setGeometry(QRect(0, 0, 110, 26));
         QSizePolicy sizePolicy2(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
         sizePolicy2.setHorizontalStretch(0);
         sizePolicy2.setVerticalStretch(0);
@@ -534,12 +549,9 @@ public:
         scrollArea_set->setWidgetResizable(true);
         scrollAreaWidgetContents_set = new QWidget();
         scrollAreaWidgetContents_set->setObjectName("scrollAreaWidgetContents_set");
-        scrollAreaWidgetContents_set->setGeometry(QRect(0, 0, 64, 98));
+        scrollAreaWidgetContents_set->setGeometry(QRect(0, 0, 228, 578));
         verticalLayout_10 = new QVBoxLayout(scrollAreaWidgetContents_set);
         verticalLayout_10->setObjectName("verticalLayout_10");
-        verticalLayout_10->setContentsMargins(0, 0, 0, 0);
-        vl_set = new QVBoxLayout();
-        vl_set->setObjectName("vl_set");
         btn_custom = new QPushButton(scrollAreaWidgetContents_set);
         btn_custom->setObjectName("btn_custom");
         btn_custom->setStyleSheet(QString::fromUtf8("QPushButton{\n"
@@ -562,7 +574,7 @@ public:
 "}"));
         btn_custom->setCheckable(true);
 
-        vl_set->addWidget(btn_custom);
+        verticalLayout_10->addWidget(btn_custom);
 
         btn_connect = new QPushButton(scrollAreaWidgetContents_set);
         btn_connect->setObjectName("btn_connect");
@@ -586,7 +598,7 @@ public:
 "}"));
         btn_connect->setCheckable(true);
 
-        vl_set->addWidget(btn_connect);
+        verticalLayout_10->addWidget(btn_connect);
 
         btn_msg = new QPushButton(scrollAreaWidgetContents_set);
         btn_msg->setObjectName("btn_msg");
@@ -610,7 +622,7 @@ public:
 "}"));
         btn_msg->setCheckable(true);
 
-        vl_set->addWidget(btn_msg);
+        verticalLayout_10->addWidget(btn_msg);
 
         btn_account = new QPushButton(scrollAreaWidgetContents_set);
         btn_account->setObjectName("btn_account");
@@ -634,14 +646,59 @@ public:
 "}"));
         btn_account->setCheckable(true);
 
-        vl_set->addWidget(btn_account);
+        verticalLayout_10->addWidget(btn_account);
 
-        verticalSpacer_7 = new QSpacerItem(20, 408, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
+        btn_video_call = new QPushButton(scrollAreaWidgetContents_set);
+        btn_video_call->setObjectName("btn_video_call");
+        btn_video_call->setStyleSheet(QString::fromUtf8("QPushButton{\n"
+"	background-color:rgb(255,255,255);\n"
+"	border: 1px solid rgb(255, 255, 255);\n"
+"	border-top-color: rgba(255, 255, 255, 0.6);\n"
+"    border-left-color: rgba(255, 255, 255, 0.6);\n"
+"    border-right-color: rgba(0, 0, 0, 0.2);\n"
+"    border-bottom-color: rgba(0, 0, 0, 0.2);\n"
+"	border-radius: 5px;\n"
+"}\n"
+"QPushButton:checked{\n"
+"	background-color:rgba(244,234,42,200);\n"
+"	border: 1px solid rgba(244, 234, 42, 200);\n"
+"	border-top-color: rgba(255, 255, 255, 0.6);\n"
+"    border-left-color: rgba(255, 255, 255, 0.6);\n"
+"    border-right-color: rgba(0, 0, 0, 0.2);\n"
+"    border-bottom-color: rgba(0, 0, 0, 0.2);\n"
+"	border-radius: 5px;\n"
+"}"));
+        btn_video_call->setCheckable(true);
 
-        vl_set->addItem(verticalSpacer_7);
+        verticalLayout_10->addWidget(btn_video_call);
 
+        btn_about = new QPushButton(scrollAreaWidgetContents_set);
+        btn_about->setObjectName("btn_about");
+        btn_about->setStyleSheet(QString::fromUtf8("QPushButton{\n"
+"	background-color:rgb(255,255,255);\n"
+"	border: 1px solid rgb(255, 255, 255);\n"
+"	border-top-color: rgba(255, 255, 255, 0.6);\n"
+"    border-left-color: rgba(255, 255, 255, 0.6);\n"
+"    border-right-color: rgba(0, 0, 0, 0.2);\n"
+"    border-bottom-color: rgba(0, 0, 0, 0.2);\n"
+"	border-radius: 5px;\n"
+"}\n"
+"QPushButton:checked{\n"
+"	background-color:rgba(244,234,42,200);\n"
+"	border: 1px solid rgba(244, 234, 42, 200);\n"
+"	border-top-color: rgba(255, 255, 255, 0.6);\n"
+"    border-left-color: rgba(255, 255, 255, 0.6);\n"
+"    border-right-color: rgba(0, 0, 0, 0.2);\n"
+"    border-bottom-color: rgba(0, 0, 0, 0.2);\n"
+"	border-radius: 5px;\n"
+"}"));
+        btn_about->setCheckable(true);
 
-        verticalLayout_10->addLayout(vl_set);
+        verticalLayout_10->addWidget(btn_about);
+
+        verticalSpacer_7 = new QSpacerItem(20, 413, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
+
+        verticalLayout_10->addItem(verticalSpacer_7);
 
         scrollArea_set->setWidget(scrollAreaWidgetContents_set);
 
@@ -807,11 +864,13 @@ public:
 
         checkBox_likes = new QCheckBox(page_set_account);
         checkBox_likes->setObjectName("checkBox_likes");
+        checkBox_likes->setChecked(true);
 
         verticalLayout_15->addWidget(checkBox_likes);
 
         checkBox_group = new QCheckBox(page_set_account);
         checkBox_group->setObjectName("checkBox_group");
+        checkBox_group->setChecked(true);
 
         verticalLayout_15->addWidget(checkBox_group);
 
@@ -833,6 +892,62 @@ public:
         page_set_msg = new QWidget();
         page_set_msg->setObjectName("page_set_msg");
         stacked_set->addWidget(page_set_msg);
+        page_set_about = new QWidget();
+        page_set_about->setObjectName("page_set_about");
+        verticalLayout_16 = new QVBoxLayout(page_set_about);
+        verticalLayout_16->setObjectName("verticalLayout_16");
+        label_current_version = new QLabel(page_set_about);
+        label_current_version->setObjectName("label_current_version");
+
+        verticalLayout_16->addWidget(label_current_version);
+
+        label_latest_version = new QLabel(page_set_about);
+        label_latest_version->setObjectName("label_latest_version");
+
+        verticalLayout_16->addWidget(label_latest_version);
+
+        btn_update = new QPushButton(page_set_about);
+        btn_update->setObjectName("btn_update");
+
+        verticalLayout_16->addWidget(btn_update);
+
+        verticalSpacer_10 = new QSpacerItem(20, 485, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
+
+        verticalLayout_16->addItem(verticalSpacer_10);
+
+        stacked_set->addWidget(page_set_about);
+        page_set_video_call = new QWidget();
+        page_set_video_call->setObjectName("page_set_video_call");
+        verticalLayout_18 = new QVBoxLayout(page_set_video_call);
+        verticalLayout_18->setObjectName("verticalLayout_18");
+        groupBox_3 = new QGroupBox(page_set_video_call);
+        groupBox_3->setObjectName("groupBox_3");
+        verticalLayout_17 = new QVBoxLayout(groupBox_3);
+        verticalLayout_17->setObjectName("verticalLayout_17");
+        radio_call_tcp = new QRadioButton(groupBox_3);
+        radio_call_tcp->setObjectName("radio_call_tcp");
+        radio_call_tcp->setChecked(true);
+
+        verticalLayout_17->addWidget(radio_call_tcp);
+
+        radio_call_udp = new QRadioButton(groupBox_3);
+        radio_call_udp->setObjectName("radio_call_udp");
+
+        verticalLayout_17->addWidget(radio_call_udp);
+
+        radio_call_p2p = new QRadioButton(groupBox_3);
+        radio_call_p2p->setObjectName("radio_call_p2p");
+
+        verticalLayout_17->addWidget(radio_call_p2p);
+
+
+        verticalLayout_18->addWidget(groupBox_3);
+
+        verticalSpacer_11 = new QSpacerItem(20, 433, QSizePolicy::Policy::Minimum, QSizePolicy::Policy::Expanding);
+
+        verticalLayout_18->addItem(verticalSpacer_11);
+
+        stacked_set->addWidget(page_set_video_call);
         page_set_null = new QWidget();
         page_set_null->setObjectName("page_set_null");
         stacked_set->addWidget(page_set_null);
@@ -945,8 +1060,8 @@ public:
 
         retranslateUi(MainWindow);
 
-        stackedWidget_main->setCurrentIndex(4);
-        stacked_set->setCurrentIndex(0);
+        stackedWidget_main->setCurrentIndex(3);
+        stacked_set->setCurrentIndex(4);
         stackedWidget_group->setCurrentIndex(2);
 
 
@@ -987,6 +1102,8 @@ public:
         btn_connect->setText(QCoreApplication::translate("MainWindow", "\346\234\215\345\212\241\345\231\250", nullptr));
         btn_msg->setText(QCoreApplication::translate("MainWindow", "\346\266\210\346\201\257\350\256\276\347\275\256", nullptr));
         btn_account->setText(QCoreApplication::translate("MainWindow", "\350\264\246\345\217\267\344\270\216\345\256\211\345\205\250", nullptr));
+        btn_video_call->setText(QCoreApplication::translate("MainWindow", "\350\247\206\351\242\221\351\200\232\350\257\235", nullptr));
+        btn_about->setText(QCoreApplication::translate("MainWindow", "\345\205\263\344\272\216\350\275\257\344\273\266", nullptr));
         label->setText(QCoreApplication::translate("MainWindow", "\346\234\215\345\212\241\345\231\250ip\357\274\232", nullptr));
         label_2->setText(QCoreApplication::translate("MainWindow", "\347\253\257\345\217\243\357\274\232", nullptr));
         groupBox->setTitle(QCoreApplication::translate("MainWindow", "\351\200\211\346\213\251\346\234\215\345\212\241\345\231\250\350\277\236\346\216\245\347\261\273\345\236\213\357\274\232", nullptr));
@@ -1007,6 +1124,13 @@ public:
         checkBox_group->setText(QCoreApplication::translate("MainWindow", "\345\205\201\350\256\270\350\242\253\345\245\275\345\217\213\346\213\211\350\277\233\347\276\244\350\201\212", nullptr));
         btn_update_password->setText(QCoreApplication::translate("MainWindow", "\346\233\264\346\224\271\345\257\206\347\240\201", nullptr));
         btn_logout->setText(QCoreApplication::translate("MainWindow", "\351\200\200\345\207\272\347\231\273\345\275\225", nullptr));
+        label_current_version->setText(QCoreApplication::translate("MainWindow", "\345\275\223\345\211\215\347\211\210\346\234\254\357\274\232", nullptr));
+        label_latest_version->setText(QCoreApplication::translate("MainWindow", "\346\234\200\346\226\260\347\211\210\346\234\254\357\274\232", nullptr));
+        btn_update->setText(QCoreApplication::translate("MainWindow", "\346\213\211\345\217\226\346\234\200\346\226\260\345\256\211\350\243\205\345\214\205", nullptr));
+        groupBox_3->setTitle(QCoreApplication::translate("MainWindow", "\351\200\211\346\213\251\350\247\206\351\242\221\351\200\232\350\257\235\346\226\271\345\274\217", nullptr));
+        radio_call_tcp->setText(QCoreApplication::translate("MainWindow", "\346\234\215\345\212\241\345\231\250Tcp", nullptr));
+        radio_call_udp->setText(QCoreApplication::translate("MainWindow", "\346\234\215\345\212\241\345\231\250Udp", nullptr));
+        radio_call_p2p->setText(QCoreApplication::translate("MainWindow", "P2P", nullptr));
         edit_seek_group->setPlaceholderText(QCoreApplication::translate("MainWindow", "\346\220\234\347\264\242\347\276\244\350\201\212", nullptr));
         btn_seek_group->setText(QCoreApplication::translate("MainWindow", "\346\220\234\347\264\242", nullptr));
         btn_create_group->setText(QCoreApplication::translate("MainWindow", "\345\210\233\345\273\272\346\226\260\347\232\204\347\276\244\350\201\212", nullptr));

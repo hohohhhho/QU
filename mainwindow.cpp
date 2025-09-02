@@ -5,6 +5,7 @@
 #include "userpatcher.h"
 #include "camerawidget.h"
 #include "groupdetail.h"
+#include "appupdater.h"
 
 #include <QBuffer>
 #include <QFileDialog>
@@ -20,6 +21,8 @@
 #include <QMovie>
 #include <QThread>
 #include <QUdpSocket>
+#include <QVersionNumber>
+#include <QComboBox>
 
 QMutex mutex_chat;
 QMap<int,QList<Message>> map_userchat_history={};
@@ -178,6 +181,8 @@ void MainWindow::init(int id,QString account,QString password)
         btn_group_set->addButton(ui->btn_connect);
         btn_group_set->addButton(ui->btn_msg);
         btn_group_set->addButton(ui->btn_account);
+        btn_group_set->addButton(ui->btn_video_call);
+        btn_group_set->addButton(ui->btn_about);
         connect(btn_group_set,&QButtonGroup::buttonClicked,this,[=](QAbstractButton* btn){
             if(btn==ui->btn_custom){
                 ui->stacked_set->setCurrentWidget(ui->page_set_custom);
@@ -187,182 +192,236 @@ void MainWindow::init(int id,QString account,QString password)
                 ui->stacked_set->setCurrentWidget(ui->page_set_msg);
             }else if(btn==ui->btn_account){
                 ui->stacked_set->setCurrentWidget(ui->page_set_account);
+            }else if(btn==ui->btn_video_call){
+                ui->stacked_set->setCurrentWidget(ui->page_set_video_call);
+            }else if(btn==ui->btn_about){
+                QString current_version = QApplication::applicationVersion();
+                QString latest_version;
+                newSql("/@",[=](QStringList& list)mutable{
+                    latest_version = list[2];
+                    ui->label_latest_version->setText("最新版本:" + latest_version);
+                    if(current_version == latest_version){
+                        ui->btn_update->setEnabled(false);
+                    }
+                });
+                ui->label_current_version->setText("当前版本:" + current_version);
+                ui->stacked_set->setCurrentWidget(ui->page_set_about);
             }
         });
 
         emit initProgress(0.1f,"加载设置界面");
 
-        static QString temp_host_ip;
-        static quint16 temp_host_port;
-        static ServerMod temp_server_mod;
+        //服务器设置页面
+        {
+            static QString temp_host_ip;
+            static quint16 temp_host_port;
+            static ServerMod temp_server_mod;
 
-        mutex_ip.lockForRead();
-        temp_host_ip=hostip;
-        temp_host_port=hostport;
-        temp_server_mod=server_mod;
-        mutex_ip.unlock();
-        QButtonGroup* btn_group_connect_mod=new QButtonGroup(this);
-        btn_group_connect_mod->addButton(ui->radio_linux);
-        btn_group_connect_mod->addButton(ui->radio_windows);
-        btn_group_connect_mod->addButton(ui->radio_cloud);
-        btn_group_connect_mod->addButton(ui->radio_custom);
+            mutex_ip.lockForRead();
+            temp_host_ip=hostip;
+            temp_host_port=hostport;
+            temp_server_mod=server_mod;
+            mutex_ip.unlock();
+            QButtonGroup* btn_group_connect_mod=new QButtonGroup(this);
+            btn_group_connect_mod->addButton(ui->radio_linux);
+            btn_group_connect_mod->addButton(ui->radio_windows);
+            btn_group_connect_mod->addButton(ui->radio_cloud);
+            btn_group_connect_mod->addButton(ui->radio_custom);
 
 
-        auto reset=[=](){
-            if(ui->radio_linux->isChecked()){
-                temp_server_mod=ServerMod::Linux;
-                ui->edit_ip->setReadOnly(true);
-                ui->edit_port->setReadOnly(true);
-                ui->edit_ip->setText("192.168.163.137");
-                ui->edit_port->setText(QString::number(HOSTPORT));
-            }else if(ui->radio_windows->isChecked()){
-                temp_server_mod=ServerMod::Windows;
-                ui->edit_ip->setReadOnly(true);
-                ui->edit_port->setReadOnly(true);
-                ui->edit_ip->setText("127.0.0.1");
-                ui->edit_port->setText(QString::number(HOSTPORT));
-            }else if(ui->radio_cloud->isChecked()){
-                temp_server_mod=ServerMod::Cloud;
-                ui->edit_ip->setReadOnly(true);
-                ui->edit_port->setReadOnly(true);
-            }else if(ui->radio_custom->isChecked()){
-                temp_server_mod=ServerMod::Custom;
-                ui->edit_ip->setReadOnly(false);
-                ui->edit_port->setReadOnly(false);
+            auto reset=[=](){
+                if(ui->radio_linux->isChecked()){
+                    temp_server_mod=ServerMod::Linux;
+                    ui->edit_ip->setReadOnly(true);
+                    ui->edit_port->setReadOnly(true);
+                    ui->edit_ip->setText(LINUXIP);
+                    ui->edit_port->setText(QString::number(HOSTPORT));
+                }else if(ui->radio_windows->isChecked()){
+                    temp_server_mod=ServerMod::Windows;
+                    ui->edit_ip->setReadOnly(true);
+                    ui->edit_port->setReadOnly(true);
+                    ui->edit_ip->setText(WINDOWSIP);
+                    ui->edit_port->setText(QString::number(HOSTPORT));
+                }else if(ui->radio_cloud->isChecked()){
+                    temp_server_mod=ServerMod::Cloud;
+                    ui->edit_ip->setReadOnly(true);
+                    ui->edit_port->setReadOnly(true);
+                }else if(ui->radio_custom->isChecked()){
+                    temp_server_mod=ServerMod::Custom;
+                    ui->edit_ip->setReadOnly(false);
+                    ui->edit_port->setReadOnly(false);
+                    ui->edit_ip->setText(temp_host_ip);
+                    ui->edit_port->setText(QString::number(temp_host_port));
+                }
+            };
+
+            switch (temp_server_mod) {
+            case ServerMod::Linux:
+                ui->radio_linux->setChecked(true);
+                break;
+            case ServerMod::Windows:
+                ui->radio_windows->setChecked(true);
+                break;
+            case ServerMod::Cloud:
+                ui->radio_cloud->setChecked(true);
+                break;
+            default:
+                ui->radio_custom->setChecked(true);
+                break;
+            }
+            reset();
+
+            auto relogin=[=]()->int{
+                int id_result=-1;
+                auto sqlFunc=[&id_result](QStringList list)mutable{
+                    id_result=list[2].toInt();
+                };
+                QByteArray content=QString("/m/login*%1**%2*").arg(m_account,m_password).toUtf8();
+                newSql(content,sqlFunc);
+                return id_result;
+            };
+
+            connect(btn_group_connect_mod,&QButtonGroup::buttonClicked,this,[=](QAbstractButton* btn){
+                Q_UNUSED(btn);
+                reset();
+            });
+            connect(ui->btn_connect_save,&QPushButton::clicked,this,[=](){
+                QString text_ip=ui->edit_ip->text();
+                QString text_port=ui->edit_port->text();
+                mutex_ip.lockForWrite();
+                hostip=text_ip;
+                hostport=text_port.toUInt();
+                server_mod=temp_server_mod;
+                mutex_ip.unlock();
+            });
+            connect(ui->btn_connect_reset,&QPushButton::clicked,this,[=](){
                 ui->edit_ip->setText(temp_host_ip);
                 ui->edit_port->setText(QString::number(temp_host_port));
-            }
-        };
-
-        switch (temp_server_mod) {
-        case ServerMod::Linux:
-            ui->radio_linux->setChecked(true);
-            break;
-        case ServerMod::Windows:
-            ui->radio_windows->setChecked(true);
-            break;
-        case ServerMod::Cloud:
-            ui->radio_cloud->setChecked(true);
-            break;
-        default:
-            ui->radio_custom->setChecked(true);
-            break;
-        }
-        reset();
-
-        auto relogin=[=]()->int{
-            int id_result=-1;
-            auto sqlFunc=[&id_result](QStringList list)mutable{
-                id_result=list[2].toInt();
-            };
-            QByteArray content=QString("/m/login*%1**%2*").arg(m_account,m_password).toUtf8();
-            newSql(content,sqlFunc);
-            return id_result;
-        };
-
-        connect(btn_group_connect_mod,&QButtonGroup::buttonClicked,this,[=](QAbstractButton* btn){
-            Q_UNUSED(btn);
-            reset();
-        });
-        connect(ui->btn_connect_save,&QPushButton::clicked,this,[=](){
-            QString text_ip=ui->edit_ip->text();
-            QString text_port=ui->edit_port->text();
-            mutex_ip.lockForWrite();
-            hostip=text_ip;
-            hostport=text_port.toUInt();
-            server_mod=temp_server_mod;
-            mutex_ip.unlock();
-        });
-        connect(ui->btn_connect_reset,&QPushButton::clicked,this,[=](){
-            ui->edit_ip->setText(temp_host_ip);
-            ui->edit_port->setText(QString::number(temp_host_port));
-        });
-        connect(ui->btn_connect_relogin,&QPushButton::clicked,this,[=](){
-            emit ui->btn_connect_save->clicked();
-            int new_id=relogin();
-            if(new_id>1){
-                init(new_id,m_account,m_password);
-            }else{
-                showTip("重登录失败");
-            }
-        });
-        connect(ui->btn_connect_restart,&QPushButton::clicked,this,[=](){
-            emit ui->btn_connect_save->clicked();
-            int new_id=relogin();
-            if(new_id>1){
-                MainWindow* w=new MainWindow();
-                w->init(new_id,m_account,m_password);
-                w->show();
-                this->deleteLater();
-            }else{
-                showTip("账号或密码错误");
-            }
-        });
-
-        // QButtonGroup* group_seek_by=new QButtonGroup(this);
-        // group_seek_by->addButton(ui->radio_seek_by_id);
-        // group_seek_by->addButton(ui->radio_seek_by_nickname);
-        // group_seek_by->addButton(ui->radio_seek_by_rand);
-        connect(ui->radio_seek_by_noway,&QRadioButton::clicked,this,[=](bool isChecked){
-            bool action=!isChecked;
-            ui->radio_seek_by_id->setChecked(action);
-            ui->radio_seek_by_nickname->setChecked(action);
-            ui->radio_seek_by_rand->setChecked(action);
-        });
-        connect(ui->btn_update_password,&QPushButton::clicked,this,[=](){
-            bool passed=false;//先填密码，密码对了才能改
-            QDialog* dlg=new QDialog(this);
-            QHBoxLayout* hl=new QHBoxLayout(dlg);
-            QLineEdit* edit=new QLineEdit("",dlg);
-            edit->setPlaceholderText("填写旧密码");
-            QPushButton* btn=new QPushButton("确定",dlg);
-            connect(btn,&QPushButton::clicked,this,[=]()mutable{
-                if(passed){
-                    QString new_password=edit->text();
-                    if(new_password.isEmpty()){
-                        showTip("密码不能为空");
-                        return;
-                    }
-                    if(new_password==m_password){
-                        showTip("新密码不能与旧密码相同");
-                        return;
-                    }
-                    for(QChar& c:new_password){
-                        if( c<'0' || ( c>'9' && c<'A' ) || (c>'Z' && c<'a' && c!='_') || c>'z'){
-                            showTip("只能使用大小写字母和数字");
-                            return;
-                        }
-                    }
-
-                    auto sqlFunc=[=](QStringList list){
-                        Q_UNUSED(list);
-                        dlg->close();
-                        showTip("密码保存成功");
-                    };
-                    QByteArray content=QString("/m/update_password*%1**%2*").arg(new_password).arg(m_user.id).toUtf8();
-                    newSql(content,sqlFunc,[=]{
-                        showTip("操作失败");
-                    });
-                    this->m_password=new_password;
-                }else if(edit->text()==m_password){
-                    passed=true;
-                    edit->clear();
-                    edit->setPlaceholderText("填写新密码");
+            });
+            connect(ui->btn_connect_relogin,&QPushButton::clicked,this,[=](){
+                emit ui->btn_connect_save->clicked();
+                int new_id=relogin();
+                if(new_id>1){
+                    init(new_id,m_account,m_password);
                 }else{
-                    QMessageBox::information(this,"提示","密码错误");
-                    return;
+                    showTip("重登录失败");
                 }
             });
-            hl->addWidget(edit);
-            hl->addWidget(btn);
-            dlg->exec();
-        });
-        connect(ui->btn_logout,&QPushButton::clicked,this,[=](){
-            LoginWidget* l=new LoginWidget;
-            l->show();
-            this->deleteLater();
-        });
+            connect(ui->btn_connect_restart,&QPushButton::clicked,this,[=](){
+                emit ui->btn_connect_save->clicked();
+                int new_id=relogin();
+                if(new_id>1){
+                    MainWindow* w=new MainWindow();
+                    w->init(new_id,m_account,m_password);
+                    w->show();
+                    this->deleteLater();
+                }else{
+                    showTip("账号或密码错误");
+                }
+            });
+        }
 
+        //账户安全设置页面
+        {
+            connect(ui->radio_seek_by_noway,&QRadioButton::clicked,this,[=](bool isChecked){
+                bool action=!isChecked;
+                ui->radio_seek_by_id->setChecked(action);
+                ui->radio_seek_by_nickname->setChecked(action);
+                ui->radio_seek_by_rand->setChecked(action);
+            });
+            connect(ui->btn_update_password,&QPushButton::clicked,this,[=](){
+                bool passed=false;//先填密码，密码对了才能改
+                QDialog* dlg=new QDialog(this);
+                QHBoxLayout* hl=new QHBoxLayout(dlg);
+                QLineEdit* edit=new QLineEdit("",dlg);
+                edit->setPlaceholderText("填写旧密码");
+                QPushButton* btn=new QPushButton("确定",dlg);
+                connect(btn,&QPushButton::clicked,this,[=]()mutable{
+                    if(passed){
+                        QString new_password=edit->text();
+                        if(new_password.isEmpty()){
+                            showTip("密码不能为空");
+                            return;
+                        }
+                        if(new_password==m_password){
+                            showTip("新密码不能与旧密码相同");
+                            return;
+                        }
+                        for(QChar& c:new_password){
+                            if( c<'0' || ( c>'9' && c<'A' ) || (c>'Z' && c<'a' && c!='_') || c>'z'){
+                                showTip("只能使用大小写字母和数字");
+                                return;
+                            }
+                        }
+
+                        auto sqlFunc=[=](QStringList list){
+                            Q_UNUSED(list);
+                            dlg->close();
+                            showTip("密码保存成功");
+                        };
+                        QByteArray content=QString("/m/update_password*%1**%2*").arg(new_password).arg(m_user.id).toUtf8();
+                        newSql(content,sqlFunc,[=]{
+                            showTip("操作失败");
+                        });
+                        this->m_password=new_password;
+                    }else if(edit->text()==m_password){
+                        passed=true;
+                        edit->clear();
+                        edit->setPlaceholderText("填写新密码");
+                    }else{
+                        QMessageBox::information(this,"提示","密码错误");
+                        return;
+                    }
+                });
+                hl->addWidget(edit);
+                hl->addWidget(btn);
+                dlg->exec();
+            });
+            connect(ui->btn_logout,&QPushButton::clicked,this,[=](){
+                LoginWidget* l=new LoginWidget;
+                l->show();
+                this->deleteLater();
+            });
+        }
+
+        //关于软件设置页面
+        {
+            connect(ui->btn_update,&QPushButton::clicked,this,[=](){
+
+                QDialog* dlg=new QDialog(this);
+                QHBoxLayout* hl=new QHBoxLayout(dlg);
+                QLineEdit* edit=new QLineEdit("",dlg);
+                QPushButton* btn_choose=new QPushButton("选择",dlg);
+                QComboBox* box = new QComboBox(dlg);
+                QPushButton* btn_confirm=new QPushButton("下载",dlg);
+                dlg->setWindowTitle("选择");
+                dlg->setAttribute(Qt::WA_DeleteOnClose);
+                edit->setPlaceholderText("输入安装地址");
+                QString current_path = QApplication::applicationDirPath();
+                edit->setText(current_path);
+                QStringList list = {"Windows","Linux","macOS"};
+                box->addItems(list);
+                hl->addWidget(edit,8);
+                hl->addWidget(btn_choose,2);
+                hl->addWidget(box,3);
+                hl->addWidget(btn_confirm,3);
+                connect(btn_choose,&QPushButton::clicked,this,[=]()mutable{
+                    QString path = QFileDialog::getExistingDirectory(dlg,"",current_path);
+                    edit->setText(path);
+                });
+                connect(btn_confirm,&QPushButton::clicked,this,[=]()mutable{
+                    QString path = edit->text();
+                    if(!QDir(path).exists()){
+                        showTip("请输入有效地址");
+                        return;
+                    }
+                    AppUpdater* updater = new AppUpdater(this, box->currentText());
+                    dlg->close();
+                    updater->getUpdate(path);
+                });
+                dlg->exec();
+            });
+        }
     }
 
     // connect(timer_msg_clear,&QTimer::timeout,this,&MainWindow::handleSocket);

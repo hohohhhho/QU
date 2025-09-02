@@ -1,4 +1,5 @@
 debug/abstractthread.o
+debug/appupdater.o
 debug/chatpreviewbutton.o
 debug/groupdetail.o
 debug/main.o
@@ -24,6 +25,7 @@ debug/loadwidget.o
 debug/loginwidget.o
 debug/qrc_res.o
 debug/moc_abstractthread.o
+debug/moc_appupdater.o
 debug/moc_chatpreviewbutton.o
 debug/moc_groupdetail.o
 debug/moc_mainwindow.o

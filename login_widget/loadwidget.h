@@ -9,10 +9,12 @@ class LoadWidget : public QWidget
 public:
     explicit LoadWidget(QString text="加载中...",QWidget *parent = nullptr);
     void paintEvent(QPaintEvent* ev)override;
+    void contextMenuEvent(QContextMenuEvent* ev)override;
 
     void changeText(const QString& text);
+    QString getText(){return text;};
 public slots:
-    void changeProgress(qreal progress, const QString &text);
+    void changeProgress(qreal progress, const QString &text = "加载中");
 signals:
     void finished();
 private:

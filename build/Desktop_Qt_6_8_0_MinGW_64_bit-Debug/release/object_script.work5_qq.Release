@@ -1,4 +1,5 @@
 release/abstractthread.o
+release/appupdater.o
 release/chatpreviewbutton.o
 release/groupdetail.o
 release/main.o
@@ -24,6 +25,7 @@ release/loadwidget.o
 release/loginwidget.o
 release/qrc_res.o
 release/moc_abstractthread.o
+release/moc_appupdater.o
 release/moc_chatpreviewbutton.o
 release/moc_groupdetail.o
 release/moc_mainwindow.o
