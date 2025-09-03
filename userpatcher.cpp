@@ -13,7 +13,7 @@ UserPatcher::UserPatcher(QObject *parent)
     this->m_thread=new QThread(this);
     this->moveToThread(m_thread);
     m_thread->start();
-    qDebug()<<"UserPatcher id"<<this->thread();
+    // qDebug()<<"UserPatcher id"<<this->thread();
 }
 
 UserPatcher::~UserPatcher()

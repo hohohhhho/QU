@@ -20,12 +20,15 @@ public:
     }type;
     explicit ChatPreviewButton(User user,QWidget *parent = nullptr);
     explicit ChatPreviewButton(Group group, QWidget *parent = nullptr);
+    ~ChatPreviewButton();
 
     void paintEvent(QPaintEvent* ev)override;
     void mousePressEvent(QMouseEvent* ev)override;
+    void contextMenuEvent(QContextMenuEvent* ev)override;
 
     void choose(bool choose=true);
     void updateState();
+    void setMenuContext(QMenu* menu);
 
     User m_user;
     Group m_group;
@@ -43,6 +46,8 @@ private:
     QColor color_bk=QColor(244,234,42,100);
     QMutex mutex_checked;
     bool checked=false;
+
+    QMenu* m_menu;
 
     QHBoxLayout* m_hl;
     Profile* profile;

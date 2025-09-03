@@ -61,7 +61,7 @@ void AppUpdater::getUpdate(QString path_install)
             };
 
             load->changeProgress(1.0f,"校验文件哈希值");
-            auto hash_result = calculateFileHash(data);
+            auto hash_result = calculateHash(data);
             if( hash != hash_result){
                 load->setVisible(false);
                 QMessageBox::warning(nullptr,"提示",QString("安装包哈希值校验失败%1\n请重新下载更新")
@@ -162,12 +162,4 @@ void AppUpdater::getUpdate(QString path_install)
     loop->exec();
     socket->deleteLater();
     load->deleteLater();
-}
-
-QByteArray AppUpdater::calculateFileHash(const QByteArray &file_data) const
-{
-    QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(file_data);
-    qDebug()<<"hash.result()";
-    return hash.result().toHex();
 }

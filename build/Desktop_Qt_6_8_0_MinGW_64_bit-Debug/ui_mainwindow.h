@@ -402,7 +402,7 @@ public:
         scrollArea_friend->setWidgetResizable(true);
         scrollAreaWidgetContents_friend = new QWidget();
         scrollAreaWidgetContents_friend->setObjectName("scrollAreaWidgetContents_friend");
-        scrollAreaWidgetContents_friend->setGeometry(QRect(0, 0, 110, 62));
+        scrollAreaWidgetContents_friend->setGeometry(QRect(0, 0, 229, 580));
         verticalLayout_4 = new QVBoxLayout(scrollAreaWidgetContents_friend);
         verticalLayout_4->setObjectName("verticalLayout_4");
         verticalLayout_4->setContentsMargins(0, 0, 0, 0);
@@ -488,7 +488,7 @@ public:
         scrollArea_preview->setWidgetResizable(true);
         scrollAreaWidgetContents_preview = new QWidget();
         scrollAreaWidgetContents_preview->setObjectName("scrollAreaWidgetContents_preview");
-        scrollAreaWidgetContents_preview->setGeometry(QRect(0, 0, 110, 26));
+        scrollAreaWidgetContents_preview->setGeometry(QRect(0, 0, 229, 580));
         QSizePolicy sizePolicy2(QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred);
         sizePolicy2.setHorizontalStretch(0);
         sizePolicy2.setVerticalStretch(0);
@@ -1060,7 +1060,7 @@ public:
 
         retranslateUi(MainWindow);
 
-        stackedWidget_main->setCurrentIndex(3);
+        stackedWidget_main->setCurrentIndex(1);
         stacked_set->setCurrentIndex(4);
         stackedWidget_group->setCurrentIndex(2);
 

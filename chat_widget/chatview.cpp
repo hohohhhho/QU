@@ -2,6 +2,7 @@
 #include "profile.h"
 #include "chatbubble.h"
 #include "userpatcher.h"
+#include "userdetail.h"
 
 #include <QPainter>
 #include <QTextEdit>
@@ -103,6 +104,12 @@ void ChatView::addMsg(Message message, bool my)
         bubble->setFixedHeight(new_height);
         container->setFixedHeight(new_height);
     });
+    connect(profile,&QPushButton::clicked,this,[=](){
+        UserDetail* detail=new UserDetail(my?m_user:o_user,nullptr,true,my);
+        detail->setPopWidget();
+        detail->move(container->mapToGlobal(profile->pos()+QPoint(profile->width()/2,profile->height()/2)));
+        detail->show();
+    });
 
     QIcon icon=my?m_user.icon:o_user.icon;
     profile->setIcon(icon);
@@ -150,6 +157,12 @@ void ChatView::addMsg(Message message, User sender)
         bubble->setFixedHeight(new_height);
         container->setFixedHeight(new_height);
     });
+    connect(profile,&QPushButton::clicked,this,[=](){
+        UserDetail* detail=new UserDetail(sender, nullptr, true, sender==m_user);
+        detail->setPopWidget();
+        detail->move(container->mapToGlobal(profile->pos()+QPoint(profile->width()/2,profile->height()/2)));
+        detail->show();
+    });
 
     if(sender.isEmpty()){
         UserPatcher* userPatcher=new UserPatcher;
@@ -161,7 +174,7 @@ void ChatView::addMsg(Message message, User sender)
             userPatcher->cleanUp();
             userPatcher->deleteLater();
         });
-        userPatcher->patchUser(m_user);
+        userPatcher->patchUser(sender);
     }else{
         QIcon icon = sender.icon;
         profile->setIcon(icon);

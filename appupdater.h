@@ -11,7 +11,6 @@ public:
     explicit AppUpdater(QObject *parent = nullptr,QString packetname = "Windows");
 
     void getUpdate(QString path_install);
-    QByteArray calculateFileHash(const QByteArray &file_data)const;
 signals:
     void progress(qreal progress);
 private:

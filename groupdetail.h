@@ -3,6 +3,7 @@
 
 #include "macro.h"
 
+#include <QVBoxLayout>
 #include <QWidget>
 
 namespace Ui {
@@ -26,13 +27,16 @@ signals:
     void chat();
 private:
     Ui::GroupDetail *ui;
+    QMap<int,int> map_members;
 
+    QVBoxLayout* layout_scroll;
     int role = 0;
     bool edit_mod = false;
     void newSql(const QByteArray &sql, std::function<void (QStringList &)> func_success, std::function<void ()> func_fail=NULL);
     void modifyGroup();
     void modifyGroupIcon();
     void leaveGroup();
+    void updateMemberList();
 };
 
 #endif // GROUPDETAIL_H

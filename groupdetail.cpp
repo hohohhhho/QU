@@ -1,10 +1,12 @@
 #include "chatpreviewbutton.h"
 #include "groupdetail.h"
 #include "ui_groupdetail.h"
+#include "userdetail.h"
 #include "userpatcher.h"
 
 #include <QBuffer>
 #include <QFileDialog>
+#include <QMenu>
 #include <QTcpSocket>
 #include <QTimer>
 
@@ -22,8 +24,6 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
                         "QLineEdit#edit_intro{"
                         "font-size:15px;"
                         "}");
-    QVBoxLayout* layout_scroll = new QVBoxLayout(ui->scrollAreaWidgetContents);
-    layout_scroll->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
 
     this->m_user = user;
     this->m_group = group;
@@ -139,7 +139,11 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
             modifyGroupIcon();
         });
         connect(ui->btn1,&QPushButton::clicked,this,[=](){
-
+            QByteArray data = QString("/m/dissolve_chatgroup*%1*").arg(m_group.id).toUtf8();
+            newSql(data,[=](QStringList){
+                emit updateGroupList();
+                emit showTip("解散成功");
+            });
         });
         connect(ui->btn2,&QPushButton::clicked,this,[=]()mutable{
             if(ui->btn2->text() == "编辑群聊"){
@@ -183,68 +187,13 @@ GroupDetail::GroupDetail(const User& user,const Group &group, QWidget *parent)
         newSql(sql.toUtf8(),[=](QStringList& list)mutable{
             for(int i=2; i+1 < list.size(); i+=2){
                 int id = list[i].toInt();
-                int role = list[i+1].toInt();
+                int role = list[i+1].toInt();//成员权限
 
-                // map_member.insert(id,role);
-                User user;
-                user.id = id;
-
-                if(id > 0){
-                    qDebug()<<"加载ChatPreviewButton";
-                    ChatPreviewButton* btn = new ChatPreviewButton(user,ui->scrollAreaWidgetContents);
-                    layout_scroll->insertWidget(layout_scroll->count()-1,btn);
-
-                    QString unique_text;
-                    switch(role){
-                    case 1:
-                        unique_text = "成员";
-                        break;
-                    case 2:
-                        unique_text = "管理员";
-                        break;
-                    case 3:
-                        unique_text = "群主";
-                        break;
-                    }
-                    btn->unique_text = unique_text;
-                    btn->updateState();
-
-                    QApplication::processEvents();
-                }
+                map_members.insert(id,role);
             }
+            updateMemberList();
         });
-        // QTimer::singleShot(10,this,[=](){
-        //     qDebug()<<"map_member size"<<map_member.size();
-        //     for(auto it=map_member.begin() ; it!=map_member.constEnd() ;++it){//map的键即为id
-        //         int id = it.key();
-        //         int role = it.value();
-        //         User user;
-        //         user.id = id;
-
-        //         if(id > 0){
-        //             qDebug()<<"加载ChatPreviewButton";
-        //             ChatPreviewButton* btn = new ChatPreviewButton(user,ui->scrollAreaWidgetContents);
-        //             layout_scroll->insertWidget(layout_scroll->count()-1,btn);
-
-        //             QString unique_text;
-        //             switch(role){
-        //             case 1:
-        //                 unique_text = "成员";
-        //                 break;
-        //             case 2:
-        //                 unique_text = "管理员";
-        //                 break;
-        //             case 3:
-        //                 unique_text = "群主";
-        //                 break;
-        //             }
-        //             btn->unique_text = unique_text;
-        //             btn->updateState();
-        //         }
-        //     }
-        // });
     }
-    qDebug()<<"GroupDetail构建完成";
 }
 
 GroupDetail::~GroupDetail()
@@ -359,4 +308,90 @@ void GroupDetail::leaveGroup()
     },[=](){
         showTip("退出失败");
    });
+}
+
+void GroupDetail::updateMemberList()
+{
+    qDeleteAll(ui->scrollAreaWidgetContents->children());
+    this->layout_scroll = new QVBoxLayout(ui->scrollAreaWidgetContents);
+    layout_scroll->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
+
+    for(auto it=map_members.begin(); it!=map_members.end(); ++it){
+        int id = it.key();
+        int role = it.value();
+        User user;
+        user.id = id;
+
+        if(id > 0){
+            ChatPreviewButton* btn = new ChatPreviewButton(user,ui->scrollAreaWidgetContents);
+
+            layout_scroll->insertWidget(layout_scroll->count()-1,btn);
+
+            QString unique_text;
+            QMenu* menu = new QMenu;
+            QAction* act_check = new QAction("查看信息",menu);
+            connect(act_check,&QAction::triggered,this,[=](){
+                UserDetail* detail = new UserDetail(user,nullptr);
+                detail->setPopWidget();
+                detail->move(ui->scrollAreaWidgetContents->mapToGlobal(btn->pos()+QPoint(btn->width()/2,btn->height()/2)));
+                detail->show();
+            });
+            menu->addAction(act_check);
+
+            switch(role){
+            case 1:
+                unique_text = "成员";
+                if(this->role >= 2){
+                    QAction* act_Up = new QAction("升为管理员",menu);
+                    QAction* act_kick = new QAction("踢出群聊",menu);
+                    menu->addAction(act_Up);
+                    menu->addAction(act_kick);
+                    connect(act_Up,&QAction::triggered,this,[=](){
+                        QByteArray data = QString("/m/promote_member_from_chatgroup*%1**%2*").arg(id).arg(m_group.id).toUtf8();
+                        newSql(data,[=](QStringList&){
+                            emit showTip("提升成功");
+                            map_members[id] = 2;
+                            updateMemberList();
+                        },[=](){
+                                   emit showTip("提升失败");
+                               });
+                    });
+                    connect(act_kick,&QAction::triggered,this,[=](){
+                        QByteArray data = QString("/m/kick_member_from_chatgroup*%1**%2*").arg(id).arg(m_group.id).toUtf8();
+                        newSql(data,[=](QStringList&){
+                            emit showTip("踢出成功");
+                            map_members.remove(id);
+                            updateMemberList();
+                        },[=](){
+                                   emit showTip("踢出失败");
+                               });
+                    });
+                }
+                break;
+            case 2:
+                unique_text = "管理员";
+                if(this->role >= 3){
+                    QAction* act_Dwon = new QAction("降职为成员",menu);
+                    menu->addAction(act_Dwon);
+                    connect(act_Dwon,&QAction::triggered,this,[=](){
+                        QByteArray data = QString("/m/demote_member_from_chatgroup*%1**%2*").arg(id).arg(m_group.id).toUtf8();
+                        newSql(data,[=](QStringList&){
+                            emit showTip("降职成功");
+                            map_members[id] = 1;
+                            updateMemberList();
+                        },[=](){
+                           emit showTip("降职失败");
+                        });
+                    });
+                }
+                break;
+            case 3:
+                unique_text = "群主";
+                break;
+            }
+            btn->unique_text = unique_text;
+            btn->setMenuContext(menu);
+            btn->updateState();
+        }
+    }
 }

@@ -2,6 +2,8 @@
 #include "ui_loginwidget.h"
 #include "mainwindow.h"
 #include "loadwidget.h"
+#include "macro.h"
+
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -13,6 +15,7 @@
 #include <QScrollBar>
 #include <QButtonGroup>
 #include <QThread>
+#include <QCryptographicHash>
 
 LoginWidget::LoginWidget(QWidget *parent)
     : QWidget(parent)
@@ -317,6 +320,7 @@ LoginWidget::LoginWidget(QWidget *parent)
     connect(ui->btn_register,&QPushButton::clicked,this,[=](){
         QString account=ui->edit_account_register->text();
         QString password=ui->edit_password_register->text();
+        QByteArray password_hash = calculateHash(password.toUtf8());
         if(account==""||password==""){
             QMessageBox::information(this,"提示","账号或密码不能为空");
             return;
@@ -350,7 +354,7 @@ LoginWidget::LoginWidget(QWidget *parent)
                         w->show();
                         l->deleteLater();
                     });
-                    w->init(id,account,password);
+                    w->init(id,account,password_hash);
                 });
             }else if(list[1]=="f"){
                 QMessageBox::warning(this,"提示","注册失败:"+data.split("/").last());
@@ -366,7 +370,7 @@ LoginWidget::LoginWidget(QWidget *parent)
             loop->deleteLater();
         });
         socket->connectToHost(QHostAddress(hostip),hostport);
-        QByteArray content=QString("/r*%1**%2*").arg(account,password).toUtf8();
+        QByteArray content=QString("/m/register*%1**").arg(account).toUtf8() + password_hash +'*';
 
         if(socket->state()==QTcpSocket::ConnectingState && !socket->waitForConnected(5000)){
             QMessageBox::warning(this,"提示","连接超时");
@@ -380,6 +384,7 @@ LoginWidget::LoginWidget(QWidget *parent)
     connect(ui->btn_login,&QPushButton::clicked,this,[=](){
         QString account=ui->edit_account->text();
         QString password=ui->edit_password->text();
+        QByteArray password_hash = calculateHash(password.toUtf8());
         if(account==""||password==""){
             QMessageBox::information(this,"提示","账号或密码不能为空");
             return;
@@ -420,7 +425,7 @@ LoginWidget::LoginWidget(QWidget *parent)
                             w->show();
                             l->deleteLater();
                         });
-                        w->init(id,account,password);
+                        w->init(id,account,password_hash);
                     });
                 }
             }else if(list[1]=="f"){
@@ -437,7 +442,7 @@ LoginWidget::LoginWidget(QWidget *parent)
         });
         socket->connectToHost(QHostAddress(hostip),hostport);
         qDebug()<<"login-hostip"<<hostip<<"hostport"<<hostport;
-        QByteArray content=QString("/m/login*%1**%2*").arg(account,password).toUtf8();
+        QByteArray content=QString("/m/login*%1**").arg(account).toUtf8() + password_hash +'*';
         if(socket->state()==QTcpSocket::ConnectingState && !socket->waitForConnected(5000)){
             finish();
             QMessageBox::warning(this,"提示","连接超时");

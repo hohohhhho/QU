@@ -1,7 +1,9 @@
 #include "chatpreviewbutton.h"
 #include "userpatcher.h"
+#include <QContextMenuEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMenu>
 #include <QPainter>
 
 extern QMutex mutex_chat;
@@ -24,8 +26,17 @@ ChatPreviewButton::ChatPreviewButton(Group group, QWidget *parent)
     init();
 }
 
+ChatPreviewButton::~ChatPreviewButton()
+{
+    if(m_menu){
+        delete m_menu;
+    }
+}
+
 void ChatPreviewButton::init()
 {
+    this->m_menu =nullptr;
+
     int pad=2;
     this->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Fixed);
     this->setFixedHeight(64+pad*2);
@@ -172,6 +183,13 @@ void ChatPreviewButton::mousePressEvent(QMouseEvent *ev)
 
 }
 
+void ChatPreviewButton::contextMenuEvent(QContextMenuEvent *ev)
+{
+    if(m_menu){
+        m_menu->exec(ev->globalPos());
+    }
+}
+
 void ChatPreviewButton::choose(bool choose)
 {
     mutex_checked.lock();
@@ -291,6 +309,14 @@ void ChatPreviewButton::updateState()
     mutex_chat.unlock();
 
     update();
+}
+
+void ChatPreviewButton::setMenuContext(QMenu *menu)
+{
+    m_menu = menu;
+    // m_menu->setParent(this);
+    m_menu->setWindowFlag(Qt::Popup);
+    m_menu->setVisible(false);
 }
 
 bool ChatPreviewButton::isChecked()

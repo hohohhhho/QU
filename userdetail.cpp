@@ -6,6 +6,8 @@
 #include <QFileDialog>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPainterPath>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -18,6 +20,7 @@ UserDetail::UserDetail(const User &user, QWidget *parent, bool isfriend, bool my
     ui->stacked_user_info->setCurrentWidget(ui->page_read);
 
     this->m_user=user;
+    this->setAttribute(Qt::WA_TranslucentBackground);
 
     ui->btn_like->setText(QString::number(m_user.likes));
 
@@ -140,6 +143,21 @@ UserDetail::~UserDetail()
     delete ui;
 }
 
+void UserDetail::paintEvent(QPaintEvent *ev)
+{
+    Q_UNUSED(ev);
+    QPainter painter(this);
+    painter.fillRect(rect(),Qt::transparent);
+    painter.setPen(Qt::NoPen);
+    QPainterPath path;
+    path.addRoundedRect(rect(),20,20);
+
+    painter.setBrush(Qt::white);
+    painter.drawPath(path);
+    painter.setBrush(color_light_blue);
+    painter.drawPath(path);
+}
+
 bool UserDetail::init()
 {
     if(this->m_user.id <= 0){
@@ -168,6 +186,27 @@ bool UserDetail::init()
         updateUi();
     }
     return true;
+}
+
+void UserDetail::setPopWidget()
+{
+    ui->stacked_btn->setVisible(false);
+    QVBoxLayout* l = qobject_cast<QVBoxLayout*>(this->layout());
+    if(l){
+        l->setStretch(l->count()-1,0);
+    }else{
+        qDebug()<<"UserDetail::setPopWidget::l为空";
+    }
+    this->setFont(QFont("微软雅黑",15));
+    // this->setStyleSheet("QWidget#UserDetail{"
+    //                     "border:2px solid white;"
+    //                     "border-radius:10px;"
+    //                     "font-size:15px;"
+    //                     "}");
+    this->setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
+    this->setAttribute(Qt::WA_DeleteOnClose);
+    this->resize(447,250);
+    this->init();
 }
 void UserDetail::newSql(const QByteArray &sql, std::function<void (QStringList&)> func_success,std::function<void()> func_fail)
 {

@@ -15,8 +15,10 @@ class UserDetail : public QWidget
 public:
     explicit UserDetail(const User& user,QWidget *parent = nullptr,bool isfriend=false,bool myself=false);
     ~UserDetail();
+    void paintEvent(QPaintEvent* ev)override;
     User m_user;
     bool init();
+    void setPopWidget();
 signals:
     void updateUserInfo(const User& new_user_info,const QIcon& data=QIcon());
     void showTip(const QString& tip);

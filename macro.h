@@ -12,6 +12,7 @@
 #include <QReadWriteLock>
 #include <QTcpSocket>
 #include <QEventLoop>
+#include <QCryptographicHash>
 
 #define HOSTPORT 8899
 #define WINDOWSIP "127.0.0.1"
@@ -54,10 +55,17 @@ inline QByteArray static defaultReadSocket(QTcpSocket *socket)
 {
     QByteArray content;
     QDataStream in(socket);
-    in.setVersion(QDataStream::Qt_6_8);
+    in.setVersion(QDataStream::Qt_5_15);
     in>>content;
 
     return content;
+}
+
+inline QByteArray static calculateHash(const QByteArray& data)
+{
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(data);
+    return hash.result().toHex();
 }
 
 class Group{
@@ -120,5 +128,8 @@ public:
     QByteArray msg="";
     QVector<User> vt_group_user;
 };
+
+inline const static QColor color_blue(42,72,160);//蓝色
+inline const static QColor color_light_blue(42,72,160,30);//浅蓝色
 
 #endif // MACRO_H

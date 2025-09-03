@@ -72,6 +72,7 @@ void MainWindow::init(int id,QString account,QString password)
     this->setStyleSheet("*{"
                         "font-size:20px;"
                         "}");
+    // QApplication::setFont(QFont("微软雅黑",20));
 
 
     ui->btn_friend_request->setNotSquare();
@@ -584,7 +585,7 @@ void MainWindow::paintEvent(QPaintEvent *ev)
 {
     Q_UNUSED(ev);
     QPainter painter(this);
-    painter.fillRect(this->rect(),QColor(42,72,160,30));
+    painter.fillRect(this->rect(),color_light_blue);
 }
 
 void MainWindow::resizeEvent(QResizeEvent *ev)
