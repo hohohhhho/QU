@@ -220,6 +220,11 @@ LoginWidget::LoginWidget(QWidget *parent)
             QString tip;
             QTcpSocket* socket_same=new QTcpSocket;
             QEventLoop* loop=new QEventLoop;
+            auto finish = [=](){
+                loop->quit();
+                loop->deleteLater();
+                socket_same->deleteLater();
+            };
             connect(socket_same,&QTcpSocket::readyRead,socket_same,[=,&tip]()mutable{
                 QString data=readSocket(socket_same);
                 QStringList list=data.split('/');
@@ -234,21 +239,18 @@ LoginWidget::LoginWidget(QWidget *parent)
                 }else{
                     qDebug()<<"data"<<data;
                 }
-                loop->quit();
-                loop->deleteLater();
+                finish();
             });
             connect(socket_same,&QTcpSocket::errorOccurred,socket_same,[=](QAbstractSocket::SocketError error) {
                 qDebug() <<"Socket Error:"<< error;
-                loop->quit();
-                loop->deleteLater();
+                finish();
             });
             socket_same->connectToHost(QHostAddress(hostip),hostport);
             QByteArray content=QString("/m/same_account*%1*").arg(text).toUtf8();
             if(socket_same->state()==QTcpSocket::ConnectingState && !socket_same->waitForConnected(5000)){
                 tip="连接超时";
                 real_time_detection = false;//将自动查询账户功能关闭
-                loop->quit();
-                loop->deleteLater();
+                finish();
             }else{
                 sendMsg(socket_same,content);
             }
@@ -327,7 +329,7 @@ LoginWidget::LoginWidget(QWidget *parent)
         }
         QTcpSocket* socket=new QTcpSocket;
         QEventLoop* loop=new QEventLoop;
-        connect(socket,&QTcpSocket::readyRead,this,[=](){
+        connect(socket,&QTcpSocket::readyRead,socket,[=](){
             QString data=readSocket(socket);
             QStringList list=data.split('/');
             qDebug()<<"注册中:list"<<list;
@@ -337,9 +339,6 @@ LoginWidget::LoginWidget(QWidget *parent)
             if(list[1]=="s"){
                 int id=list[2].toInt();
 
-                // socket->disconnect();
-                // socket->disconnectFromHost();
-                // socket->deleteLater();
                 this->close();
                 QMessageBox::information(this,"提示","注册成功！");
                 MainWindow* w=new MainWindow;
@@ -361,7 +360,7 @@ LoginWidget::LoginWidget(QWidget *parent)
             loop->quit();
             loop->deleteLater();
         });
-        connect(socket,&QTcpSocket::errorOccurred,this,[loop](QAbstractSocket::SocketError error) {
+        connect(socket,&QTcpSocket::errorOccurred,socket,[loop](QAbstractSocket::SocketError error) {
             qDebug() <<"Socket Error:"<< error;
             loop->quit();
             loop->deleteLater();
@@ -394,7 +393,12 @@ LoginWidget::LoginWidget(QWidget *parent)
 
         QTcpSocket* socket=new QTcpSocket;
         QEventLoop* loop=new QEventLoop(this);
-        connect(socket,&QTcpSocket::readyRead,this,[=](){
+        auto finish = [=](){
+            loop->quit();
+            loop->deleteLater();
+            socket->deleteLater();
+        };
+        connect(socket,&QTcpSocket::readyRead,socket,[=](){
             QString data=QString::fromUtf8(readSocket(socket));
             QStringList list=data.split('/');
             if(list.size()<2){
@@ -406,9 +410,6 @@ LoginWidget::LoginWidget(QWidget *parent)
 
                 if(id>0){
                     qDebug()<<"id:"<<id;
-                    socket->disconnect();
-                    socket->disconnectFromHost();
-                    socket->deleteLater();
                     this->close();
                     MainWindow* w=new MainWindow;
                     LoadWidget* l=new LoadWidget;
@@ -427,20 +428,18 @@ LoginWidget::LoginWidget(QWidget *parent)
             }else{
                 qDebug()<<"意外的list"<<list;
             }
-            loop->quit();
-            loop->deleteLater();
+            finish();
         });
-        connect(socket,&QTcpSocket::errorOccurred,this,[=](QAbstractSocket::SocketError error) {
+        connect(socket,&QTcpSocket::errorOccurred,socket,[=](QAbstractSocket::SocketError error) {
             qDebug() <<"Socket Error:"<< error;
             QMessageBox::warning(this,"提示","连接服务器失败");
-            socket->deleteLater();
-            loop->quit();
-            loop->deleteLater();
+            finish();
         });
         socket->connectToHost(QHostAddress(hostip),hostport);
         qDebug()<<"login-hostip"<<hostip<<"hostport"<<hostport;
         QByteArray content=QString("/m/login*%1**%2*").arg(account,password).toUtf8();
         if(socket->state()==QTcpSocket::ConnectingState && !socket->waitForConnected(5000)){
+            finish();
             QMessageBox::warning(this,"提示","连接超时");
         }else{
             sendMsg(socket,content);

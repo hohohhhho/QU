@@ -397,7 +397,12 @@ void MainWindow::init(int id,QString account,QString password)
                 dlg->setWindowTitle("选择");
                 dlg->setAttribute(Qt::WA_DeleteOnClose);
                 edit->setPlaceholderText("输入安装地址");
+
                 QString current_path = QApplication::applicationDirPath();
+                QDir dir(current_path);
+                dir.cdUp();
+                current_path = dir.absolutePath();
+
                 edit->setText(current_path);
                 QStringList list = {"Windows","Linux","macOS"};
                 box->addItems(list);
