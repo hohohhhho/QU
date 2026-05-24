@@ -2,10 +2,18 @@
 
 #include <QMouseEvent>
 #include <QPainter>
+#include <QTimer>
 
 PictureView::PictureView(QWidget *parent)
     : QWidget{parent}
-{}
+{
+    m_timer = new QTimer(this);
+    m_timer->setSingleShot(true);
+    connect(m_timer, &QTimer::timeout, this, [=](){
+        pxp = QPixmap();
+        update();
+    });
+}
 
 void PictureView::paintEvent(QPaintEvent *ev)
 {
@@ -15,7 +23,7 @@ void PictureView::paintEvent(QPaintEvent *ev)
     if(!pxp.isNull()){
         painter.drawPixmap(0,0,pxp.scaled(this->size(),Qt::KeepAspectRatio,Qt::SmoothTransformation));
     }else{
-        painter.fillRect(rect(),Qt::lightGray);
+        painter.fillRect(rect(), Qt::black);
     }
 }
 
@@ -40,6 +48,7 @@ void PictureView::setImage(const QImage &image)
 {
     this->pxp = QPixmap::fromImage(image);
     update();
+    m_timer->start(500);//500ms内没有新帧则抛弃旧帧
 }
 
 void PictureView::setRangeLimit(QRect range)

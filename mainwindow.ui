@@ -303,7 +303,7 @@ QPushButton:checked{
 }</string>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="page_test">
        <layout class="QHBoxLayout" name="horizontalLayout">
@@ -349,8 +349,8 @@ QPushButton:checked{
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>229</width>
-             <height>580</height>
+             <width>141</width>
+             <height>62</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -548,8 +548,8 @@ QPushButton:checked{
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>229</width>
-             <height>580</height>
+             <width>110</width>
+             <height>28</height>
             </rect>
            </property>
            <property name="sizePolicy">
@@ -854,7 +854,7 @@ QPushButton:checked{
           <item>
            <widget class="QStackedWidget" name="stacked_set">
             <property name="currentIndex">
-             <number>4</number>
+             <number>5</number>
             </property>
             <widget class="QWidget" name="page_set_connect">
              <layout class="QVBoxLayout" name="verticalLayout_13">
@@ -1220,6 +1220,52 @@ QPushButton:checked{
                </widget>
               </item>
               <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="1,2,2">
+                <item>
+                 <widget class="QLabel" name="label_3">
+                  <property name="text">
+                   <string>视频分辨率</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="combo_resolution">
+                  <item>
+                   <property name="text">
+                    <string>1280x720</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>640x480</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>640x360</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="horizontalSpacer_5">
+                  <property name="orientation">
+                   <enum>Qt::Orientation::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>40</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </item>
+              <item>
                <spacer name="verticalSpacer_11">
                 <property name="orientation">
                  <enum>Qt::Orientation::Vertical</enum>
@@ -1456,14 +1502,14 @@ QPushButton:checked{
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Profile</class>
-   <extends>QPushButton</extends>
-   <header>profile.h</header>
-  </customwidget>
-  <customwidget>
    <class>MyHintPushButton</class>
    <extends>QPushButton</extends>
    <header>myhintpushbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Profile</class>
+   <extends>QPushButton</extends>
+   <header>profile.h</header>
   </customwidget>
   <customwidget>
    <class>RedPointButton</class>

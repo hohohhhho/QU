@@ -1,5 +1,6 @@
 #include "camerawidget.h"
 #include "ui_camerawidget.h"
+#include "macro.h"
 
 #include <QCloseEvent>
 #include <QMediaCaptureSession>
@@ -12,16 +13,25 @@ CameraWidget::CameraWidget(QWidget *parent)
     , ui(new Ui::CameraWidget)
 {
     ui->setupUi(this);
-    // auto screen = QApplication::primaryScreen();
-    this->resize(800,600);
+    this->setFixedSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 
-    ui->subWidget->setRangeLimit(QRect(0,0,800-200,600-150));
+    ui->subWidget->setRangeLimit(QRect(0, 0, VIDEO_WIDTH-200, VIDEO_HEIGHT-150));
 
-    timer = new QTimer(this);
+    timer_clock = new QTimer(this);
+    timer_pxp = new QTimer(this);
     session = new QMediaCaptureSession(this);
     camera = new QCamera(this);
     sink = new QVideoSink(this);
+    m_decoder = new VideoDecoder(this);
 
+    timer_pxp->setSingleShot(true);
+    ui->label_time->setStyleSheet("ClockLabel{"
+                                  "font:20px;"
+                                  "color:white;"
+                                  "}");
+    connect(m_decoder, &VideoDecoder::newFrame, this, [=](const QImage &image){
+        this->setImage(image);
+    });
     session->setCamera(camera);
     session->setVideoSink(sink);
     connect(sink,&QVideoSink::videoFrameChanged,this,[=](const QVideoFrame& frame){
@@ -49,24 +59,37 @@ CameraWidget::CameraWidget(QWidget *parent)
     connect(ui->subWidget,&PictureView::clicked,this,[=](){
         widgetExchanged = !widgetExchanged;
     });
-    connect(timer,&QTimer::timeout,this,[=](){
+    connect(timer_clock, &QTimer::timeout, this, [=](){
         ui->label_time->addTime(1);
+    });
+    connect(timer_pxp, &QTimer::timeout, this, [=](){
+        current_image = QImage();
+        update();
     });
 }
 
 CameraWidget::~CameraWidget()
 {
     delete ui;
+    if(m_decoder->isRunning()){
+        m_decoder->stop();
+        m_decoder->wait();
+        delete m_decoder;
+    }
 }
 
 void CameraWidget::paintEvent(QPaintEvent *ev)
 {
     Q_UNUSED(ev);
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
     if(!current_image.isNull()){
-        QImage& image = this->current_image;
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-        painter.drawImage((width()-image.width())/2 , (height()-image.height())/2 , image);
+        // QImage& image = this->current_image;
+        // painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+        // painter.drawImage((width()-image.width())/2 , (height()-image.height())/2 , image);
+        painter.drawImage(rect(), current_image);
+    }else{
+        painter.fillRect(rect(), Qt::black);
     }
 }
 
@@ -101,8 +124,17 @@ void CameraWidget::setImage(const QImage &image)
         }else{
             this->current_image = image;
             update();
+            timer_pxp->start(500);
         }
     }
+}
+
+void CameraWidget::setH264Data(const QByteArray &data)
+{
+    if(!m_decoder->isRunning()){
+        m_decoder->start();
+    }
+    m_decoder->decodeData(data);
 }
 
 void CameraWidget::setWidgetExchanged(bool isExchanged)
@@ -113,7 +145,7 @@ void CameraWidget::setWidgetExchanged(bool isExchanged)
 void CameraWidget::setConnected(bool isConnected)
 {
     this->connected = isConnected;
-    timer->start(1000);
+    timer_clock->start(1000);
 }
 
 void CameraWidget::setCaller(bool isCaller){

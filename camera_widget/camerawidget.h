@@ -5,6 +5,7 @@
 #include <QCamera>
 #include <QVideoSink>
 #include <QTime>
+#include <videodecoder.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -26,6 +27,7 @@ public:
 
     void startCapture();
     void setImage(const QImage& image);
+    void setH264Data(const QByteArray& data);
     void setWidgetExchanged(bool isExchanged);
     void setConnected(bool isConnected);
     bool isConnected(){return connected;};
@@ -44,10 +46,13 @@ private:
     QVideoSink* sink;
     // QVideoFrame current_frame;
     QImage current_image;
-    QTimer* timer;
+    QTimer* timer_clock;//时间时钟
+    QTimer* timer_pxp;//清除旧帧
+    VideoDecoder* m_decoder = nullptr;
 
     bool isCaller = false;//是否为通话发起者
     bool connected = false;//是否接通
     bool widgetExchanged = false;//是否交换了窗口显示
+
 };
 #endif // CAMERAWIDGET_H

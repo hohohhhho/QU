@@ -10,12 +10,14 @@
 #include <QResizeEvent>
 
 #define PROFILESIZE 48
+#define PADDING 10
 
 ChatView::ChatView(QWidget *parent)
     : QWidget{parent}
 {
-    this->vlayout=new QVBoxLayout(this);
-    vlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
+    this->m_vlayout=new QVBoxLayout(this);
+    //弹簧，把消息控件压到最上面显示
+    m_vlayout->addSpacerItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
     this->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 }
 
@@ -29,11 +31,7 @@ void ChatView::paintEvent(QPaintEvent *ev)
 
 void ChatView::resizeEvent(QResizeEvent *ev)
 {
-    for(QWidget*& container : list_container){
-        container->setMaximumWidth(ev->size().width());
-    }
-
-    // QWidget::resizeEvent(ev);
+    adjustSize(ev->size());
 }
 
 void ChatView::init(User user_receiver, User user_sender)
@@ -41,27 +39,11 @@ void ChatView::init(User user_receiver, User user_sender)
     this->m_user = user_receiver;
     this->o_user = user_sender;
     if(m_user.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd){
-        //     m_user = user_patcherd;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchUser(m_user);
         user_patcher_factory->patchUser(this, m_user,true,[=](User user_patched)mutable{
             m_user = user_patched;
         });
     }
     if(o_user.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd){
-        //     o_user = user_patcherd;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchUser(o_user);
         user_patcher_factory->patchUser(this, o_user,true,[=](User user_patched)mutable{
             o_user = user_patched;
         });
@@ -73,27 +55,11 @@ void ChatView::init(User my_user, Group group)
     this->m_user = my_user;
     this->m_group = group;
     if(m_user.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patcherd){
-        //     m_user = user_patcherd;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchUser(m_user);
         user_patcher_factory->patchUser(this, m_user,false,[=](User user_patched)mutable{
             m_user = user_patched;
         });
     }
     if(m_group.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::groupPatchFinished,this,[=](Group group_patched){
-        //     m_group = group_patched;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchGroup(m_group);
         user_patcher_factory->patchGroup(this, m_group,false,[=](Group group_patched)mutable{
             m_group = group_patched;
         });
@@ -101,65 +67,68 @@ void ChatView::init(User my_user, Group group)
 
 }
 
-void ChatView::addMsg(Message message, bool my)
-{
-    QWidget* container=new QWidget(this);//气泡一整行的容器（包含头像）
-    QHBoxLayout* hl=new QHBoxLayout(container);
-    QVBoxLayout* vl=new QVBoxLayout;
-    Profile* profile=new Profile(container);
-    ChatBubble* bubble=new ChatBubble(container);
+// void ChatView::addMsg(Message message, bool my)
+// {
+//     QWidget* container=new QWidget(this);//气泡一整行的容器（包含头像）
+//     QHBoxLayout* hl=new QHBoxLayout(container);
+//     QVBoxLayout* vl=new QVBoxLayout;
+//     Profile* profile=new Profile(container);
+//     ChatBubble* bubble=new ChatBubble(container);
 
-    profile->setFixedSize(PROFILESIZE,PROFILESIZE);
-    container->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
-    connect(bubble->edit,&AutoHeightTextEdit::updateSize,this,[=](){
-        int new_height=qMax(profile->height(),bubble->edit->height());
-        bubble->setFixedHeight(new_height);
-        container->setFixedHeight(new_height);
-    });
-    connect(profile,&QPushButton::clicked,this,[=](){
-        UserDetail* detail=new UserDetail(my?m_user:o_user,nullptr,true,my);
-        detail->setPopWidget();
-        detail->move(container->mapToGlobal(profile->pos()+QPoint(profile->width()/2,profile->height()/2)));
-        detail->show();
-    });
+//     profile->setFixedSize(PROFILESIZE,PROFILESIZE);
+//     container->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed);
+//     container->setMaximumWidth(this->width());
+//     connect(bubble->edit,&AutoHeightTextEdit::updateSize,this,[=](){
+//         int new_height=qMax(profile->height(),bubble->edit->height());
+//         bubble->setFixedHeight(new_height);
+//         container->setFixedHeight(new_height);
+//     });
+//     connect(profile,&QPushButton::clicked,this,[=](){
+//         UserDetail* detail=new UserDetail(my?m_user:o_user,nullptr,true,my);
+//         detail->setPopWidget();
+//         detail->move(container->mapToGlobal(profile->pos()+QPoint(profile->width()/2,profile->height()/2)));
+//         detail->show();
+//     });
 
-    User& user_msg = my ? m_user : o_user;
-    if(user_msg.isEmpty()){
-        user_patcher_factory->patchUser(this, user_msg, false, [&user_msg,profile](User user_patched)mutable{
-            user_msg = user_patched;
-            profile->setIcon(user_msg.icon);
-        });
-    }else{
-        profile->setIcon(user_msg.icon);
-    }
+//     User& user_msg = my ? m_user : o_user;
+//     if(user_msg.isEmpty()){
+//         user_patcher_factory->patchUser(this, user_msg, false, [&user_msg,profile](User user_patched)mutable{
+//             user_msg = user_patched;
+//             profile->setIcon(user_msg.icon);
+//         });
+//     }else{
+//         profile->setIcon(user_msg.icon);
+//     }
 
-    if(message.type==Message::MessageType::Text){
-        bubble->setText(message.msg);
-    }else if(message.type==Message::MessageType::Picture){
-        QPixmap pxp;
-        pxp.loadFromData(message.msg);
-        bubble->setPximap(pxp);
-    }else if(message.type==Message::MessageType::File){
-        qDebug()<<"文件";
-    }else{
-        qDebug()<<"格式错误";
-    }
+//     if(message.type == Message::MessageType::Text){
+//         bubble->setText(message.msg);
+//     }else if(message.type == Message::MessageType::Picture){
+//         QPixmap pxp;
+//         pxp.loadFromData(message.msg);
+//         bubble->setPicture(message.filename, pxp);
+//     }else if(message.type == Message::MessageType::Video){
+//         bubble->setVideo(message.filename, message.msg);
+//     }else if(message.type == Message::MessageType::File){
+//         bubble->setNormalFile(message.filename, message.msg);
+//     }else{
+//         qDebug()<<"格式错误";
+//     }
 
-    hl->setContentsMargins(0,0,0,0);
-    if(my){
-        hl->addWidget(bubble,6);
-        hl->addLayout(vl,1);
-    }else{
-        hl->addLayout(vl,1);
-        hl->addWidget(bubble,6);
-    }
+//     hl->setContentsMargins(0,0,0,0);
+//     if(my){
+//         hl->addWidget(bubble,6);
+//         hl->addLayout(vl,1);
+//     }else{
+//         hl->addLayout(vl,1);
+//         hl->addWidget(bubble,6);
+//     }
 
-    vl->addWidget(profile);
-    vl->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));//给头像控件下方添加弹簧填满多余空间
-    this->vlayout->insertWidget(vlayout->count()-1,container);
+//     vl->addWidget(profile);
+//     vl->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));//给头像控件下方添加弹簧填满多余空间
+//     this->vlayout->insertWidget(vlayout->count()-1,container);
 
-    list_container.append(container);//加入列表方便管理
-}
+//     list_container.append(container);//加入列表方便管理
+// }
 
 void ChatView::addMsg(Message message, User sender)
 {
@@ -170,7 +139,11 @@ void ChatView::addMsg(Message message, User sender)
     ChatBubble* bubble=new ChatBubble(container);
 
     profile->setFixedSize(PROFILESIZE,PROFILESIZE);
-    container->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);
+    container->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed);
+    container->setMaximumWidth(this->width());
+    bubble->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Fixed);
+    container->setMaximumWidth(this->width() - PADDING - PROFILESIZE);
+
     connect(bubble->edit,&AutoHeightTextEdit::updateSize,this,[=](){
         int new_height=qMax(profile->height(),bubble->edit->height());
         bubble->setFixedHeight(new_height);
@@ -184,18 +157,7 @@ void ChatView::addMsg(Message message, User sender)
     });
 
     if(sender.icon.isNull()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched)mutable{
-        //     sender = user_patched;
-        //     QIcon icon = sender.icon;
-        //     profile->setIcon(icon);
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchUser(sender);
         user_patcher_factory->patchUser(this, sender,false,[=](User user_patched)mutable{
-            // sender = user_patched;
             QIcon icon = user_patched.icon;
             profile->setIcon(icon);
             profile->update();
@@ -210,14 +172,17 @@ void ChatView::addMsg(Message message, User sender)
     }else if(message.type==Message::MessageType::Picture){
         QPixmap pxp;
         pxp.loadFromData(message.msg);
-        bubble->setPximap(pxp);
+        bubble->setPicture(message.filename, pxp);
+    }else if(message.type==Message::MessageType::Video){
+        bubble->setVideo(message.filename, message.msg);
     }else if(message.type==Message::MessageType::File){
-        qDebug()<<"文件";
+        bubble->setNormalFile(message.filename, message.msg);
     }else{
         qDebug()<<"格式错误";
     }
 
     hl->setContentsMargins(0,0,0,0);
+    hl->setSpacing(PADDING);
     if(sender == m_user){
         hl->addWidget(bubble,6);
         hl->addLayout(vl,1);
@@ -228,7 +193,22 @@ void ChatView::addMsg(Message message, User sender)
 
     vl->addWidget(profile);
     vl->addItem(new QSpacerItem(0,0,QSizePolicy::Ignored,QSizePolicy::Expanding));
-    this->vlayout->insertWidget(vlayout->count()-1,container);
+    this->m_vlayout->insertWidget(m_vlayout->count()-1,container);
 
+    list_bubble.append(bubble);
     list_container.append(container);
+    adjustSize(size());//给新添加子控件调整大小
+}
+
+void ChatView::adjustSize(QSize size)
+{
+    // qDebug()<<"ChatView:resizeEvent size"<<size;
+    for(QWidget*& container : list_container){
+        container->setMaximumWidth(size.width());
+    }
+    for(ChatBubble*& bubble : list_bubble){
+        int width = size.width() - PROFILESIZE - PADDING;
+        // qDebug()<<"ChatView::resizeEvent:width"<<width;
+        bubble->setMaximumWidth(width);
+    }
 }

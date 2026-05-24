@@ -8,7 +8,7 @@ Q_DECLARE_METATYPE(std::function<void()>)
 int main(int argc, char *argv[])
 {
     // qDebug()<<"available style:"<<QStyleFactory::keys();
-    QApplication::setApplicationVersion("1.3.2");
+    QApplication::setApplicationVersion("1.3.5");
     QApplication::setStyle(QStyleFactory::create("Fusion"));
     QPalette palette;
     palette.setColor(QPalette::Window, QColor(240,240,240));

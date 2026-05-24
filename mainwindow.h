@@ -4,6 +4,8 @@
 #include "chatpreviewbutton.h"
 #include "chatwidget.h"
 #include "roundlabel.h"
+#include "videodecoder.h"
+#include "videoencoder.h"
 
 #include <QMainWindow>
 #include <QTcpSocket>
@@ -12,6 +14,7 @@
 #include <QPointer>
 #include <camerawidget.h>
 #include <QUdpSocket>
+#include <QTemporaryFile>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -29,6 +32,13 @@ public:
         ScrollPreview,
         All
     };
+    struct FileReceiveTask {
+        QString fileName;
+        qint64 totalSize;
+        qint64 receivedSize;
+        QFile* tempFile;
+    };
+
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void init(int id, QString account, QString password);
@@ -40,13 +50,14 @@ public:
     // void sendMsg(QTcpSocket *socket, const QByteArray &msg);//给服务器端发送请求
     void sendMsg(int id_receiver, const QString &msg, const QChar &style_head='s');//给其他用户发送消息
     void sendFile(int id_receiver, const QByteArray &data, const QChar &style_head='s');
+    void sendUdpMsg(const QByteArray &packet, QHostAddress address, quint16 port);
     void sendVideoOverMsg(int id_receiver,const QTime& time);
     void showTip(const QString& tip);
     void adjustTipPos(QPoint dpos=QPoint(0,0));
     QByteArray readSocket(QTcpSocket *socket);
     void readMsg(const QByteArray& msg);
     void addMsg(OBJ::Type type, Message msg, bool isHistory = false);
-    void readUdpMsg(const QByteArray& msg);
+    void readUdpData(QByteArray data);
     // void newSql(const QByteArray& sql="/m/业务类型*参数*",void(*func_success)()=nullptr);
     void newSql(const QByteArray& sql="/m/业务类型*参数*", std::function<void (QStringList &)> func_success=nullptr
                 , std::function<void()> func_fail=nullptr);
@@ -66,8 +77,10 @@ public:
     void updateGroupList();
     void adjustPreviewButtonSize(AdjustPreviewButtonSize mod=AdjustPreviewButtonSize::All
                                  ,ChatPreviewButton* btn=nullptr);
-    void showCameraWidget(const int &id_sender);
+    void showCameraWidget(const int &id_other);
+    void updateVideoResolution();
     void createGroup();
+    void sendMultiThreadFile(OBJ oj, int id_receiver, QString filePath, int threadCount = 3);
 
     QString handleDataHead(QByteArray &data, const QChar &split='*');
 public slots:
@@ -77,8 +90,9 @@ signals:
 private:
     Ui::MainWindow *ui;
     // QByteArray m_tcp_buffer;
+    QMap<QString, FileReceiveTask*> m_fileReceiveMap;
 
-    QPointer<CameraWidget> m_camera_widget;//视频通话窗口
+    QPointer<CameraWidget> m_p_camera_widget;//视频通话窗口
 
     User m_user;
     QTcpSocket* m_socket_tcp;//与服务器tcp通信的套接字
@@ -104,5 +118,7 @@ private:
     QMutex mutex_read_socket;
     QMutex mutex_page_group_detail;
     QSoundEffect* sound_msg;//收到消息音效
+
+    QPointer<VideoEncoder> m_p_encoder = nullptr;//H.264编码器
 };
 #endif // MAINWINDOW_H

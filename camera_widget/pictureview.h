@@ -18,6 +18,7 @@ signals:
     void clicked();
 private:
     QPixmap pxp;
+    QTimer* m_timer;
 
     QPointF pos_pressed;
     QPoint pos_origin;

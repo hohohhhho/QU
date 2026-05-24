@@ -39,11 +39,17 @@ ChatWidget::ChatWidget(QWidget *parent)
         QString text=ui->edit_send->toPlainText();
         if(!text.isEmpty()){
             ui->edit_send->clear();
+
+            Message msg;
+            msg.msg = text.toUtf8();
+            msg.sender  = m_user;
+
             if(type == user){
-                addMsg(text.toUtf8(),true);
+                msg.receiver_user = o_user;
             }else if(type == group){
-                addMsg(text.toUtf8(),m_user);
+                msg.receiver_group = m_group;
             }
+            addMsg(msg);
 
             emit sendMsg(text);
 
@@ -59,28 +65,59 @@ ChatWidget::ChatWidget(QWidget *parent)
         w_emo->move(ui->btn_emo->mapToGlobal(pos));
     });
     connect(ui->btn_picture,&QPushButton::clicked,this,[=](){
-        QString filter="图片(*.png *.jpg)";
-        QStringList list=QFileDialog::getOpenFileNames(this,"打开图片","",filter);
-        for(QString& filename:list){
-            QPixmap pxp(filename);
-            QByteArray data;
-            QBuffer buffer(&data);
-            buffer.open(QIODevice::WriteOnly);
-            if(pxp.save(&buffer,"PNG")){
-                if(data.size()>4*1024*1024){
-                    QMessageBox::warning(this,"警告","文件不能超过4MB");
-                    return;
-                }
-                emit sendFile(data);
-                if(type == user){
-                    addMsg(data,true);
-                }else if(type == group){
-                    addMsg(data,m_user);
-                }
-            }else{
-                qDebug()<<"写入缓冲区失败";
-            }
+        QString filter = "图片(*.png *.jpg)";
+        QStringList list = QFileDialog::getOpenFileNames(this,"打开图片","",filter);
+        for(QString& filename : list){
+            emit sendFile_(filename);
 
+            QFile file(filename);
+            if(file.open(QIODevice::ReadOnly)){
+                QByteArray data = file.readAll();
+                if(type == user){
+                    Message msg;
+                    msg.type = Message::getType(data);
+                    msg.sender = m_user;
+                    msg.receiver_user = o_user;
+                    msg.msg = data;
+                    msg.filename = QFileInfo(filename).fileName();
+                    addMsg(msg);
+                }else if(type == group){
+                    Message msg;
+                    msg.type = Message::getType(data);
+                    msg.sender = m_user;
+                    msg.receiver_user = o_user;
+                    msg.msg = data;
+                    msg.filename = QFileInfo(filename).fileName();
+                    addMsg(msg,m_user);
+                }
+            }
+        }
+    });
+    connect(ui->btn_file, &QPushButton::clicked,this,[=](){
+        QStringList list = QFileDialog::getOpenFileNames(this,"打开文件","");
+        for(QString& filename : list){
+            emit sendFile_(filename);
+            QFile file(filename);
+            if(file.open(QIODevice::ReadOnly)){
+                QByteArray data = file.readAll();
+                if(type == user){
+                    Message msg;
+                    msg.type = Message::getType(data);
+                    msg.sender = m_user;
+                    msg.receiver_user = o_user;
+                    msg.msg = data;
+                    msg.filename = QFileInfo(filename).fileName();
+                    addMsg(msg);
+                }else if(type == group){
+                    Message msg;
+                    msg.type = Message::getType(data);
+                    msg.sender = m_user;
+                    msg.receiver_user = o_user;
+                    msg.msg = data;
+                    msg.filename = QFileInfo(filename).fileName();
+                    addMsg(msg,m_user);
+                }
+            }
         }
     });
     connect(ui->btn_call, &QPushButton::clicked,this,[=](){
@@ -98,20 +135,19 @@ ChatWidget::~ChatWidget()
     delete ui;
 }
 
+void ChatWidget::resizeEvent(QResizeEvent *ev)
+{
+    int chat_view_width = ev->size().width() - ui->scrollArea_history->verticalScrollBar()->width();
+    ui->chat_view->resize(chat_view_width, ui->chat_view->height());
+    QWidget::resizeEvent(ev);
+}
+
 void ChatWidget::init(User my_user, User other_user, QList<Message> list_msg)
 {
     type = Type::user;
     this->m_user = my_user;
     this->o_user = other_user;
     if(m_user.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched){
-        //     m_user = user_patched;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchUser(m_user);
         mutex_user_patcher_factory.lock();
         user_patcher_factory->patchUser(this, m_user,true,[=](User user_patched)mutable{
             m_user = user_patched;
@@ -119,14 +155,6 @@ void ChatWidget::init(User my_user, User other_user, QList<Message> list_msg)
         mutex_user_patcher_factory.unlock();
     }
     if(o_user.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched){
-        //     o_user = user_patched;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchUser(o_user);
         user_patcher_factory->patchUser(this, o_user,true,[=](User user_patched)mutable{
             o_user = user_patched;
         });
@@ -137,9 +165,11 @@ void ChatWidget::init(User my_user, User other_user, QList<Message> list_msg)
 
     for(auto& msg:list_msg){
         if(msg.sender.id==m_user.id && msg.receiver_user.id==o_user.id){
-            addMsg(msg.msg,true,false,false);
+            // addMsg(msg.msg,true,false,false);
+            addMsg(msg,false,false);
         }else if(msg.sender.id==o_user.id && msg.receiver_user.id==m_user.id){
-            addMsg(msg.msg,false,false,false);
+            // addMsg(msg.msg,false,false,false);
+            addMsg(msg,false,false);
         }else{
             qDebug()<<"私聊消息：消息对象错误";
         }
@@ -152,27 +182,11 @@ void ChatWidget::init(User my_user, Group group, QList<Message> list_msg)
     this->m_user = my_user;
     this->m_group = group;
     if(m_user.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::userPatchFinished,this,[=](User user_patched){
-        //     m_user = user_patched;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchUser(m_user);
         user_patcher_factory->patchUser(this, m_user,true,[=](User user_patched)mutable{
             m_user = user_patched;
         });
     }
     if(m_group.isEmpty()){
-        // UserPatcher* userPatcher=new UserPatcher;
-        // connect(userPatcher,&UserPatcher::groupPatchFinished,this,[=](Group group_patched){
-        //     m_group = group_patched;
-
-        //     userPatcher->cleanUp();
-        //     userPatcher->deleteLater();
-        // });
-        // userPatcher->patchGroup(m_group);
         mutex_user_patcher_factory.lock();
         user_patcher_factory->patchGroup(this, m_group,true,[=](Group group_patched)mutable{
             m_group = group_patched;
@@ -187,27 +201,83 @@ void ChatWidget::init(User my_user, Group group, QList<Message> list_msg)
 
     for(auto& msg:list_msg){
         if(msg.sender == m_user && msg.receiver_group == m_group){
-            addMsg(msg.msg,msg.sender,false,false);
+            addMsg(msg,false,false);
         }else if(!(msg.sender == m_user) && msg.receiver_group == m_group){
-            addMsg(msg.msg,msg.sender,false,false);
+            addMsg(msg,false,false);
         }else{
             qDebug()<<"群聊消息：消息对象错误";
         }
     }
 }
 
-void ChatWidget::addMsg(const QByteArray& msg, bool my ,bool unread,bool save)
+// void ChatWidget::addMsg(const QByteArray& msg, bool my ,bool unread,bool save)
+// {
+//     if(type != user){
+//         return;
+//     }
+//     Message message;
+//     message.type=Message::getType(msg);
+//     message.sender=my?m_user:o_user;
+//     message.receiver_user=my?o_user:m_user;
+//     message.msg=msg;
+
+//     ui->chat_view->addMsg(message,my);
+
+//     if(save){
+//         if(unread){
+//             mutex_chat.lock();
+//             map_userchat_unread[o_user.id].append(message);
+//             mutex_chat.unlock();
+//         }else{
+//             mutex_chat.lock();
+//             map_userchat_history[o_user.id].append(message);
+//             mutex_chat.unlock();
+//         }
+//     }
+
+//     updateScrollBar();
+
+//     emit updatePreviewState();
+// }
+
+// void ChatWidget::addMsg(const QByteArray &msg, User sender, bool unread, bool save)
+// {
+//     if(type != group){
+//         return;
+//     }
+//     Message message;
+//     message.type = Message::getType(msg);
+//     message.sender = sender;
+//     message.receiver_group = m_group;
+//     message.msg = msg;
+
+//     ui->chat_view->addMsg(message,sender);
+
+//     if(save){
+//         if(unread){
+//             mutex_chat.lock();
+//             map_groupchat_unread[m_group.id].append(message);
+//             mutex_chat.unlock();
+//         }else{
+//             mutex_chat.lock();
+//             map_groupchat_history[m_group.id].append(message);
+//             mutex_chat.unlock();
+//         }
+//     }
+
+//     updateScrollBar();
+
+//     emit updatePreviewState();
+// }
+
+void ChatWidget::addMsg(const Message &message, bool unread, bool save)
 {
     if(type != user){
         return;
     }
-    Message message;
-    message.type=Message::getType(msg);
-    message.sender=my?m_user:o_user;
-    message.receiver_user=my?o_user:m_user;
-    message.msg=msg;
 
-    ui->chat_view->addMsg(message,my);
+    qDebug()<<"ChatWidget::addMsg"<<message.filename;
+    ui->chat_view->addMsg(message,message.sender);
 
     if(save){
         if(unread){
@@ -226,16 +296,11 @@ void ChatWidget::addMsg(const QByteArray& msg, bool my ,bool unread,bool save)
     emit updatePreviewState();
 }
 
-void ChatWidget::addMsg(const QByteArray &msg, User sender, bool unread, bool save)
+void ChatWidget::addMsg(const Message &message, User sender, bool unread, bool save)
 {
     if(type != group){
         return;
     }
-    Message message;
-    message.type = Message::getType(msg);
-    message.sender = sender;
-    message.receiver_group = m_group;
-    message.msg = msg;
 
     ui->chat_view->addMsg(message,sender);
 
@@ -263,3 +328,8 @@ void ChatWidget::updateScrollBar()
         bar->setValue(bar->maximum());
     });
 }
+
+// void ChatWidget::showFile(const QString &filename, bool myself)
+// {
+
+// }

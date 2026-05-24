@@ -121,7 +121,8 @@ void ChatPreviewButton::paintEvent(QPaintEvent *ev)
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::white);
     painter.setBrush(color_bk);
-    painter.drawRect(this->rect());
+    // painter.drawRect(this->rect());
+    painter.drawRoundedRect(rect(), 8, 8);
 }
 
 void ChatPreviewButton::mousePressEvent(QMouseEvent *ev)
@@ -233,6 +234,8 @@ void ChatPreviewButton::updateState()
             return msg.msg;
         }else if(msg_type == Message::MessageType::Picture){
             return "[图片]";
+        }else if(msg_type == Message::MessageType::Video){
+            return "[视频]";
         }else if(msg_type == Message::MessageType::File){
             return "[文件]";
         }

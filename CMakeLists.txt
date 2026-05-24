@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(work5_qq_cmake VERSION 0.1 LANGUAGES CXX)
 
-set(QT_PATH "F:/Qt/6.8.3/msvc2022_64")
-set(CMAKE_PREFIX_PATH ${QT_PATH})
+# set(QT_PATH "F:/Qt/6.8.3/msvc2022_64")
+# set(QT_PATH "F:/Qt/6.8.3/mingw_64")
+# set(CMAKE_PREFIX_PATH ${QT_PATH})
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -21,6 +22,7 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS
     Sql
     Multimedia
     LinguistTools
+    MultimediaWidgets
 )
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Core
@@ -30,6 +32,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Sql
     Multimedia
     LinguistTools
+    MultimediaWidgets
 )
 
 set(TS_FILES work5_qq_cmake_zh_CN.ts)
@@ -51,6 +54,9 @@ set(PROJECT_SOURCES
     userdetail.cpp
     userpatcher.cpp
     userpatcherfactory.cpp
+    filesenderthread.cpp
+    videoencoder.cpp
+    videodecoder.cpp
 
     abstractthread.h
     appupdater.h
@@ -67,6 +73,9 @@ set(PROJECT_SOURCES
     userdetail.h
     userpatcher.h
     userpatcherfactory.h
+    filesenderthread.h
+    videoencoder.h
+    videodecoder.h
 
     groupdetail.ui
     mainwindow.ui
@@ -81,19 +90,16 @@ file(GLOB emotion_widget_sources
     "${CMAKE_CURRENT_SOURCE_DIR}/emotion_widget/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/emotion_widget/*.ui"
 )
-
 file(GLOB camera_widget_sources
     "${CMAKE_CURRENT_SOURCE_DIR}/camera_widget/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera_widget/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera_widget/*.ui"
 )
-
 file(GLOB chat_widget_sources
     "${CMAKE_CURRENT_SOURCE_DIR}/chat_widget/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/chat_widget/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/chat_widget/*.ui"
 )
-
 file(GLOB login_widget_sources
     "${CMAKE_CURRENT_SOURCE_DIR}/login_widget/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/login_widget/*.h"
@@ -157,6 +163,7 @@ target_link_libraries(work5_qq_cmake PRIVATE
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Sql
     Qt${QT_VERSION_MAJOR}::Multimedia
+    Qt${QT_VERSION_MAJOR}::MultimediaWidgets
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
@@ -188,6 +195,22 @@ install(TARGETS work5_qq_cmake
    BUNDLE DESTINATION .
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+
+
+set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/ffmpeg")
+
+target_include_directories(work5_qq_cmake PRIVATE "${FFMPEG_DIR}/include")
+
+find_library(AVCODEC_LIB NAMES avcodec PATHS "${FFMPEG_DIR}/lib" NO_DEFAULT_PATH)
+find_library(AVUTIL_LIB NAMES avutil PATHS "${FFMPEG_DIR}/lib" NO_DEFAULT_PATH)
+find_library(SWSCALE_LIB NAMES swscale PATHS "${FFMPEG_DIR}/lib" NO_DEFAULT_PATH)
+
+target_link_libraries(work5_qq_cmake PRIVATE
+    ${AVCODEC_LIB}
+    ${AVUTIL_LIB}
+    ${SWSCALE_LIB}
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)

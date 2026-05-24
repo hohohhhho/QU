@@ -15,16 +15,19 @@
 #include <QCryptographicHash>
 #include <QStyleHints>
 #include <QApplication>
+#include <QMimeDatabase>
 
 #define HOSTPORT 8899
 #define WINDOWSIP "127.0.0.1"
 #define LINUXIP "192.168.163.137"
 #define CLOUDIP "57.180.185.238"
 #define NGROKIP "52.53.90.211"
+#define VIDEO_WIDTH 800
+#define VIDEO_HEIGHT 600
 
 inline QReadWriteLock mutex_ip;
 inline QMutex mutex_patch_loop;
-inline QString hostip = WINDOWSIP ;
+inline QString hostip = LINUXIP ;
 inline quint16 hostport = HOSTPORT;
 
 enum ServerMod{
@@ -33,7 +36,7 @@ enum ServerMod{
     Cloud,
     Custom
 };
-inline ServerMod server_mod=ServerMod::Windows;
+inline ServerMod server_mod=ServerMod::Linux;
 
 inline void static patchDatabase(QSqlDatabase& db){
     static QString setDatabaseName("work5_qq");
@@ -170,18 +173,27 @@ public:
     enum MessageType{
         Text,
         Picture,
+        Video,
         File
     }type;
 
     Message(){type=MessageType::Text;}
 
-    MessageType static getType(QByteArray array){
-        QPixmap pxp;
-        pxp.loadFromData(array);
-        if(!pxp.isNull()){
+    MessageType static getType(const QByteArray& data){
+        QMimeDatabase db;
+        QMimeType mimeType = db.mimeTypeForData(data);
+
+        QString typeName = mimeType.name();
+
+        if (typeName.startsWith("image/")) {
             return MessageType::Picture;
+        } else if (typeName.startsWith("text/")) {
+            return MessageType::Text;
+        } else if (typeName.startsWith("video/")) {
+            return MessageType::Video;
+        } else {
+            return MessageType::File;
         }
-        return MessageType::Text;
     }
 
     User sender;
@@ -189,6 +201,7 @@ public:
     Group receiver_group;
     QDateTime time;
     QByteArray msg="";
+    QString filename = "未命名";
     QVector<User> vt_group_user;
 };
 

@@ -7,6 +7,8 @@
 #include "appupdater.h"
 #include "userpatcherfactory.h"
 #include "sqlqueryfactory.h"
+#include "filesenderthread.h"
+#include "videoencoder.h"
 
 #include <QBuffer>
 #include <QFileDialog>
@@ -41,6 +43,11 @@ MainWindow::~MainWindow()
 {
     qDebug()<<"析构";
     this->label_tip->deleteLater();
+    if(m_p_encoder->isRunning()){
+        m_p_encoder->stop();
+        m_p_encoder->wait();
+        delete m_p_encoder;
+    }
     delete ui;
 }
 
@@ -69,48 +76,9 @@ void MainWindow::init(int id,QString account,QString password)
     this->vl_user_detail=new QVBoxLayout(ui->page_user_detail);
     this->vl_group_detail=new QVBoxLayout(ui->page_group_detail);
     this->vl_chatwith=new QVBoxLayout(ui->page_chatwith);
-    this->m_camera_widget=nullptr;
+    this->m_p_camera_widget=nullptr;
     user_patcher_factory = new UserPatcherFactory(100, nullptr);
     sql_query_factory = new SqlQueryFactory(300, nullptr);
-    // this->timer_msg_clear = new QTimer(this);
-    // sql_query_factory->addTask("/@/1",[=](auto){
-    //     qDebug()<<"test1";
-    // });
-    // sql_query_factory->addTask("/@/2",[=](auto){
-    //     qDebug()<<"test2";
-    // });
-    // sql_query_factory->addTask("/@/3",[=](auto){
-    //     qDebug()<<"test3";
-    // });
-    // sql_query_factory->addTask("/@/4",[=](auto){
-    //     qDebug()<<"test4";
-    // });
-    // sql_query_factory->addTask("/@/5",[=](auto){
-    //     qDebug()<<"test5";
-    // });
-    // sql_query_factory->addTask("/@/6",[=](auto){
-    //     qDebug()<<"test6";
-    // });
-    // QThread::sleep(1);
-    // sql_query_factory->addTask("/@/7",[=](auto){
-    //     qDebug()<<"test7";
-    // });
-    // sql_query_factory->addTask("/@/8",[=](auto){
-    //     qDebug()<<"test8";
-    // });
-    // sql_query_factory->addTask("/@/9",[=](auto){
-    //     qDebug()<<"test9";
-    // });
-    // sql_query_factory->addTask("/@/10",[=](auto){
-    //     qDebug()<<"test10";
-    // });
-    // sql_query_factory->addTask("/@/11",[=](auto){
-    //     qDebug()<<"test11";
-    // });
-    // sql_query_factory->addTask("/@/12",[=](auto){
-    //     qDebug()<<"test12";
-    // });
-
 
     if(isDarkMod){
         this->setStyleSheet("*{"
@@ -442,7 +410,12 @@ void MainWindow::init(int id,QString account,QString password)
                 this->deleteLater();
             });
         }
-
+        //视频通话设置界面
+        {
+            connect(ui->combo_resolution, &QComboBox::currentTextChanged, this, [=](){
+                updateVideoResolution();
+            });
+        }
         //关于软件设置页面
         {
             connect(ui->btn_update,&QPushButton::clicked,this,[=](){
@@ -495,20 +468,14 @@ void MainWindow::init(int id,QString account,QString password)
 
     m_socket_tcp->connectToHost(QHostAddress(hostip),hostport);
     connect(this->m_socket_tcp,&QTcpSocket::readyRead,this,&MainWindow::handleSocket);
-    m_socket_udp->bind(7788);
+    m_socket_udp->bind(QHostAddress::Any, 0);
+    qDebug()<<"udp监听端口:"<<m_socket_udp->localPort();
     connect(this->m_socket_udp,&QUdpSocket::readyRead,this,[=](){
         QByteArray data;
         data.resize(m_socket_udp->pendingDatagramSize());
-        m_socket_udp->readDatagram(data.data(),data.size());
-        qDebug()<<"收到udp消息大小"<<data.size();
+        m_socket_udp->readDatagram(data.data(), data.size());
         //处理数据报
-        QString type = handleDataHead(data);
-        if(type == 'i'){
-            if(m_camera_widget){
-                QImage image = QImage::fromData(data);
-                m_camera_widget->setImage(image);
-            }
-        }
+        readUdpData(data);
     });
 
 
@@ -649,6 +616,7 @@ void MainWindow::init(int id,QString account,QString password)
     emit initProgress(1.0f,"初始化完成");
     QTimer::singleShot(50,this,[=](){
         showTip("欢迎!");
+        qDebug()<<"主线程id"<<this->thread()->currentThreadId();
         // updateFriendList();
         // updateGroupList();
     });
@@ -687,9 +655,25 @@ void MainWindow::handleSocket()
     }
 }
 
-void MainWindow::readUdpMsg(const QByteArray &msg)
+void MainWindow::readUdpData(QByteArray data)
 {
-
+    if(data.size() < 128){
+        qDebug()<<"readUdpData data"<<data;
+    }else{
+        qDebug()<<"readUdpData data.size()"<<data.size();
+    }
+    QString type = handleDataHead(data);
+    if(type == 'i'){
+        if(m_p_camera_widget){
+            qDebug()<<"调用解码";
+            m_p_camera_widget->setH264Data(data);
+        }
+    }/*else if(type == 'u'){
+        if(m_p_camera_widget){
+            qDebug()<<"被同意视频通话";
+            m_p_camera_widget->setConnected(true);
+        }
+    }*/
 }
 
 void MainWindow::sendMsg(int id_receiver, const QString &msg,const QChar& style_head)
@@ -707,21 +691,34 @@ void MainWindow::sendFile(int id_receiver, const QByteArray &data, const QChar &
     QByteArray buffer;//临时数据存储
     QDataStream out(&buffer,QIODevice::WriteOnly);//创建数据流写入buffer
     out.setVersion(QDataStream::Qt_5_15);
-    QByteArray packet=QString("/%1*%2**%3*").arg(style_head).arg(id_receiver).arg(m_user.id).toUtf8()+data;
+    QByteArray packet=QString("/%1*%2**%3*").arg(style_head).arg(id_receiver).arg(m_user.id).toUtf8() + data;
     out<<packet;
     m_socket_tcp->write(buffer);
 }
 
+void MainWindow::sendUdpMsg(const QByteArray &packet, QHostAddress address, quint16 port)
+{
+    m_socket_udp->writeDatagram(packet, address, port);
+}
+
 void MainWindow::sendVideoOverMsg(int id_receiver, const QTime &time)
 {
-    if(!m_camera_widget){
+    if(!m_p_camera_widget){
         return;
     }
-    if(m_camera_widget->getIsCaller()){
+    if(m_p_camera_widget->getIsCaller()){
 
         QString s_time = time.toString("hh:mm:ss");
         QString text = QString("视频通话已结束[%1]").arg(s_time);
-        chatwidget->addMsg(text.toUtf8(),true);
+
+        User receiver;
+        receiver.id = id_receiver;
+        Message msg;
+        msg.msg = text.toUtf8();
+        msg.receiver_user = receiver;
+        msg.sender = m_user;
+
+        chatwidget->addMsg(msg);
         sendMsg(id_receiver , text , 's');
     }
 }
@@ -809,7 +806,7 @@ QByteArray MainWindow::readSocket(QTcpSocket *socket)
 
 void MainWindow::readMsg(const QByteArray &msg)
 {
-    if(msg.size()<1024){
+    if(msg.size() < 1024){
         qDebug()<<"readMsg msg"<<msg;
     }else{
         qDebug()<<"readMsg msg size"<<msg.size();
@@ -836,99 +833,117 @@ void MainWindow::readMsg(const QByteArray &msg)
                 message.receiver_user = m_user;
                 message.msg = data;
                 addMsg(OBJ::user, message);
-                // loop_user_send:
-                // bool had_preview_btn=false;
-                // for(ChatPreviewButton*& btn:list_chatpreview){
-                //     if(btn->m_user.id==id_sender){
-                //         had_preview_btn=true;
-                //         User user_sender;
-                //         user_sender.id=id_sender;
-                //         Message message;
-                //         message.type=Message::getType(data);
-                //         message.sender=user_sender;
-                //         message.receiver_user=m_user;
-                //         message.msg=data;
-                //         if(sound_msg->status()==QSoundEffect::Ready){
-                //             sound_msg->play();
-                //         }else{
-                //             qDebug()<<sound_msg->status();
-                //         }
+            }else if(second_char=='S'){//send被发送消息（分片的大文件）
+                // QString id_receiver = handleDataHead(data); // 接收者就是用户自己，服务器不会转发这一字段
+                QString fileID = handleDataHead(data); // 文件的唯一标识
+                QString filename = handleDataHead(data);
+                qint64 offset = handleDataHead(data).toLongLong();
+                qint64 totalSize = handleDataHead(data).toLongLong();
 
-                //         if(btn->isChecked() && ui->stackedWidget_main->currentWidget()==ui->page_chat){
-                //             if(chatwidget){
-                //                 qDebug()<<"收到"<<id_sender<<"的消息";
-                //                 chatwidget->addMsg(data,false);
-                //             }
-                //         }else{
-                //             mutex_chat.lock();
-                //             map_userchat_unread[id_sender].append(message);
-                //             mutex_chat.unlock();
+                if(!m_fileReceiveMap.contains(fileID)) {
+                    // 如果是该文件的第一个到达的分片，初始化任务
+                    FileReceiveTask* task = new FileReceiveTask;
+                    task->totalSize = totalSize;
+                    task->receivedSize = 0;
+                    // 创建一个本地临时文件，建议以 fileID 命名
+                    QString savePath = "./download_" + fileID;
+                    task->tempFile = new QFile(savePath);
+                    task->tempFile->open(QIODevice::ReadWrite);
+                    // 预设大小（防止重复扩容，提高性能）
+                    task->tempFile->resize(totalSize);
+                    m_fileReceiveMap.insert(fileID, task);
+                }
+                FileReceiveTask* task = m_fileReceiveMap[fileID];
+                // 根据 offset 寻址写入，实现乱序拼装
+                task->tempFile->seek(offset);
+                task->tempFile->write(data);
+                task->receivedSize += data.size();
+                if(task->receivedSize >= task->totalSize) {
+                    // 接收完成，读取所有数据
+                    task->tempFile->seek(0);
+                    data = task->tempFile->readAll();
 
-                //             ui->btn_chat->setNum(ui->btn_chat->getNum()+1);
-                //             btn->updateState();
+                    User user_sender;
+                    user_sender.id = id_sender;
+                    Message message;
+                    message.type = Message::getType(data);
+                    message.sender = user_sender;
+                    message.receiver_user = m_user;
+                    message.msg = data;
+                    message.filename = filename;
+                    addMsg(OBJ::user, message);
 
-                //         }
-                //         break;
-                //     }
-                // }
-                // if(!had_preview_btn){
-                //     User user;
-                //     user.id=id_sender;
-                //     addPreviewButton(user);
-                //     goto loop_user_send;
-                // }
-            }else if(second_char=='g'){//group群内消息
-                    int id_group;
-                    id_group = handleDataHead(data).toInt();
-                loop_group_send:
-                    bool had_preview_btn = false;
-                    for(ChatPreviewButton*& btn : list_chatpreview){
-                        if(btn->m_group.id == id_group){
-                            had_preview_btn=true;
+                    //收尾工作
+                    task->tempFile->close();
+                    qDebug() << "文件接收完成，filename：" << filename;
+                    // 清理任务
+                    m_fileReceiveMap.remove(fileID);
+                    delete task;
+                }
+            }else if(second_char=='g'){//group群发消息
+                int id_group;
+                id_group = handleDataHead(data).toInt();
+                User user_sender;
+                user_sender.id = id_sender;
+                Group group_receive;
+                group_receive.id = id_group;
+                Message message;
+                message.type = Message::getType(data);
+                message.sender = user_sender;
+                message.receiver_group = group_receive;
+                message.msg = data;
+                addMsg(OBJ::group, message);
+            }else if(second_char=='G'){//group群发消息（大文件）
+                int id_group;
+                id_group = handleDataHead(data).toInt();
+                QString fileID = handleDataHead(data); // 文件的唯一标识
+                QString filename = handleDataHead(data);
+                qint64 offset = handleDataHead(data).toLongLong();
+                qint64 totalSize = handleDataHead(data).toLongLong();
 
-                            User user_sender;
-                            user_sender.id = id_sender;
-                            Group group_receive;
-                            group_receive.id = id_group;
-                            Message message;
-                            message.type=Message::getType(data);
-                            message.sender = user_sender;
-                            message.receiver_group = group_receive;
-                            message.msg = data;
-                            if(sound_msg->status()==QSoundEffect::Ready){
-                                sound_msg->play();
-                            }else{
-                                qDebug()<<sound_msg->status();
-                            }
+                if(!m_fileReceiveMap.contains(fileID)) {
+                    // 如果是该文件的第一个到达的分片，初始化任务
+                    FileReceiveTask* task = new FileReceiveTask;
+                    task->totalSize = totalSize;
+                    task->receivedSize = 0;
+                    // 创建一个本地临时文件，以 fileID 命名
+                    QString savePath = "./download_" + fileID;
+                    task->tempFile = new QFile(savePath);
+                    task->tempFile->open(QIODevice::ReadWrite);
+                    // 预设大小（防止重复扩容，提高性能）
+                    task->tempFile->resize(totalSize);
+                    m_fileReceiveMap.insert(fileID, task);
+                }
+                FileReceiveTask* task = m_fileReceiveMap[fileID];
+                // 根据 offset 寻址写入，实现乱序拼装
+                task->tempFile->seek(offset);
+                task->tempFile->write(data);
+                task->receivedSize += data.size();
+                if(task->receivedSize >= task->totalSize) {
+                    // 接收完成，读取所有数据
+                    task->tempFile->seek(0);
+                    data = task->tempFile->readAll();
 
-                            if(btn->isChecked() && ui->stackedWidget_main->currentWidget()==ui->page_chat){
-                                if(chatwidget){
-                                    // qDebug()<<QString("群聊%1收到%2的消息:%3").arg(id_group).arg(id_sender).arg(data);
-                                    chatwidget->addMsg(data,user_sender);
-                                }
-                            }else{
-                                mutex_chat.lock();
-                                map_groupchat_unread[id_group].append(message);
-                                mutex_chat.unlock();
-                                qDebug()<<"未直接显示聊天窗口";
+                    User user_sender;
+                    user_sender.id = id_sender;
+                    Group group_receive;
+                    group_receive.id = id_group;
+                    Message message;
+                    message.type = Message::getType(data);
+                    message.sender = user_sender;
+                    message.receiver_group = group_receive;
+                    message.msg = data;
+                    message.filename = filename;
+                    addMsg(OBJ::group, message);
 
-                                ui->btn_chat->setNum(ui->btn_chat->getNum()+1);
-                                btn->updateState();
-                            }
-                            break;
-                        }else{
-                            qDebug()<<"userid"<<btn->m_user.id<<"id_sender"<<id_sender;
-                        }
-                    }
-                    if(!had_preview_btn){
-                        Group group;
-                        group.id = id_group;
-
-
-                        addPreviewButton(group);
-                        goto loop_group_send;
-                    }
-                }else if(second_char=='a'){//add添加好友
+                    //收尾工作
+                    task->tempFile->close();
+                    qDebug() << "文件接收完成：filename" << filename;
+                    // 清理任务
+                    m_fileReceiveMap.remove(fileID);
+                    delete task;
+                }
+            }else if(second_char=='a'){//add添加好友
                 for(auto& pair:this->m_user.friend_request){
                     if(pair.first.id==id_sender){
                         return;
@@ -964,24 +979,24 @@ void MainWindow::readMsg(const QByteArray &msg)
 
                 data="(解除了和你的好友关系)"+data;
                 goto loop_user_send;
-            }else if(second_char=='v'){//request申请视频通话
+            }else if(second_char=='r'){//request申请视频通话
                 showCameraWidget(id_sender);
             }else if(second_char=='h'){//被挂断
-                if(m_camera_widget){
+                if(m_p_camera_widget){
                     showTip("对方已挂断");
-                    sendVideoOverMsg(id_sender,m_camera_widget->getTime());
-                    delete m_camera_widget;
+                    sendVideoOverMsg(id_sender,m_p_camera_widget->getTime());
+                    delete m_p_camera_widget;
                 }
             }else if(second_char=='u'){//被同意视频通话
-                if(m_camera_widget){
+                if(m_p_camera_widget){
                     qDebug()<<"被同意视频通话";
-                    m_camera_widget->setConnected(true);
+                    m_p_camera_widget->setConnected(true);
                 }
             }else if(second_char=='i'){//image传输通话图片
-                if(m_camera_widget && m_camera_widget->isConnected()){
+                if(m_p_camera_widget && m_p_camera_widget->isConnected()){
                     qDebug()<<"收到视频通话帧";
                     QImage image = QImage::fromData(data);
-                    m_camera_widget->setImage(image);
+                    m_p_camera_widget->setImage(image);
                 }
             }else{
                 qDebug()<<"未定义的second_char"<<second_char;
@@ -998,6 +1013,7 @@ void MainWindow::readMsg(const QByteArray &msg)
 
 void MainWindow::addMsg(OBJ::Type type, Message msg, bool isHistory)
 {
+    qDebug()<<"MainWindow::addMsg filename"<<msg.filename;
     int id_sender = msg.sender.id;
     if(type == OBJ::user){
         int id_receiver = msg.receiver_user.id;
@@ -1024,7 +1040,7 @@ void MainWindow::addMsg(OBJ::Type type, Message msg, bool isHistory)
 
             if(btn->isChecked() && ui->stackedWidget_main->currentWidget() == ui->page_chat){
                 if(chatwidget){
-                    chatwidget->addMsg(msg.msg, id_sender == m_user.id);
+                    chatwidget->addMsg(msg, id_sender == m_user.id);
                 }
             }else{
                 mutex_chat.lock();
@@ -1072,7 +1088,7 @@ void MainWindow::addMsg(OBJ::Type type, Message msg, bool isHistory)
             if(btn->isChecked() && ui->stackedWidget_main->currentWidget() == ui->page_chat){
                 if(chatwidget){
                     // qDebug()<<QString("群聊%1收到%2的消息:%3").arg(id_group).arg(id_sender).arg(data);
-                    chatwidget->addMsg(msg.msg, user_sender);
+                    chatwidget->addMsg(msg, user_sender);
                 }
             }else{
                 mutex_chat.lock();
@@ -1127,7 +1143,7 @@ void MainWindow::newSql(const QByteArray &sql, std::function<void (QStringList&)
                 func_fail();
             }
         }else{
-            qDebug()<<"接收到了意外的回复"<<data;
+            qDebug()<<"newSql:接收到了意外的回复"<<data;
         }
         socket->deleteLater();
         loop->quit();
@@ -1186,7 +1202,7 @@ void MainWindow::loadHistoryMessage(OBJ& obj)
                         showTip("获取聊天历史失败");
                         return;
                     }else{
-                        qDebug()<<"接收到了意外的回复"<<first_packet;
+                        qDebug()<<"loadHistoryMessage:接收到了意外的回复"<<first_packet;
                         return;
                     }
 
@@ -1219,15 +1235,14 @@ void MainWindow::loadHistoryMessage(OBJ& obj)
                 in.startTransaction();
                 in>> packet>> data;//每次读取一组（两个）数据
                 if(in.commitTransaction()){
-
                     count--;
                     QStringList list = QString(packet).split("/");
+                    // qDebug()<<"loadHistory:list"<<list<<"data"<<data;
                     if(list.size() < 2){
                         qDebug()<<"loadHistoryMessage:newSql list"<<list;
                         return;
                     }
                     if(list[1] == "s"){
-
                         QString msg_type = list[2];
                         int sender = list[3].toInt();
                         int receiver = list[4].toInt();
@@ -1235,7 +1250,6 @@ void MainWindow::loadHistoryMessage(OBJ& obj)
                         User user_sender, user_receiver;
                         user_sender.id = sender;
                         user_receiver.id = receiver;
-
                         Message msg;
                         msg.sender = user_sender;
                         msg.receiver_user = user_receiver;
@@ -1477,37 +1491,32 @@ void MainWindow::addChatWidget(User user_friend)
     connect(chatwidget,&ChatWidget::sendMsg,this,[=](const QString& text){
         sendMsg(user_friend.id,text);
         adjustPreviewButtonSize(AdjustPreviewButtonSize::ScrollPreview);
-
-        Message message;
-        message.type=Message::MessageType::Text;
-        message.receiver_user=user_friend;
-        message.sender=m_user;
-        message.msg=text.toUtf8();
     });
     connect(chatwidget,&ChatWidget::sendFile,this,[=](const QByteArray& data){
         sendFile(user_friend.id,data);
         adjustPreviewButtonSize(AdjustPreviewButtonSize::ScrollPreview);
+    });
+    connect(chatwidget,&ChatWidget::sendFile_,this,[=](const QString& path){
+        sendMultiThreadFile(OBJ::user, user_friend.id, path);
 
-        Message message;
-        message.type=Message::MessageType::Picture;
-        message.receiver_user=user_friend;
-        message.sender=m_user;
-        message.msg=data;
+        adjustPreviewButtonSize(AdjustPreviewButtonSize::ScrollPreview);
     });
     connect(chatwidget,&ChatWidget::call,this,[=](const int& id){
-        if(m_camera_widget){
+        if(m_p_camera_widget){
             showTip("已经在通话中了");
         }else{
-            // int sender = m_user.id;
+            int sender = m_user.id;
             int receiver = id;
-            // QByteArray packet = QString("*r**%1**%2*").arg(sender).arg(receiver).toUtf8();
-            // mutex_ip.lockForRead();
-            // m_socket_udp->writeDatagram(packet,QHostAddress(hostip),hostport);
-            // mutex_ip.unlock();
-            sendMsg(receiver,"",'v');
-            qDebug()<<"申请通话成功";
+            QByteArray packet = QString("*r**%1**%2*").arg(sender).arg(receiver).toUtf8();
+            mutex_ip.lockForRead();
+            QHostAddress ip(hostip);
+            quint16 port(hostport);
+            mutex_ip.unlock();
+            sendUdpMsg(packet, ip, port);
+            // sendMsg(receiver,"",'v');
+            qDebug()<<"申请通话成功"<<"ip"<<ip<<"端口"<<port;
             showCameraWidget(receiver);
-            m_camera_widget->setCaller(true);
+            m_p_camera_widget->setCaller(true);
         }
     });
     connect(chatwidget,&ChatWidget::toDelete,this,[=]()mutable{
@@ -1556,6 +1565,11 @@ void MainWindow::addChatWidget(Group group)
     });
     connect(chatwidget,&ChatWidget::sendFile,this,[=](const QByteArray& data){
         sendFile(group.id,data,'g');
+        adjustPreviewButtonSize(AdjustPreviewButtonSize::ScrollPreview);
+    });
+    connect(chatwidget,&ChatWidget::sendFile_,this,[=](const QString& path){
+        sendMultiThreadFile(OBJ::group, group.id, path);
+
         adjustPreviewButtonSize(AdjustPreviewButtonSize::ScrollPreview);
     });
     connect(chatwidget,&ChatWidget::toDelete,this,[=]()mutable{
@@ -1804,34 +1818,6 @@ void MainWindow::updateFriendList()
     QVBoxLayout* vl=dynamic_cast<QVBoxLayout*>(ui->scrollAreaWidgetContents_friend->layout());
     if(vl){
         for (User& user_friend : m_user.friends) {
-            // auto create = [=, &user_friend]() {
-            //    ChatPreviewButton* preview = new ChatPreviewButton(user_friend, ui->scrollAreaWidgetContents_friend);
-            //    preview->unique_text = user_friend.state;
-            //    preview->updateState();
-            //    vl->insertWidget(2, preview);
-            //    connect(preview, &ChatPreviewButton::clicked, preview, [=]() {
-            //        addUserDetailWidget(preview->m_user);
-            //     });
-            // };
-            // if(user_friend.isEmpty()){
-            //    user_patcher_factory->patchUser(this, user_friend, false,[=,&user_friend](User user_patched)mutable{
-            //        user_friend = user_patched;
-            //        create();
-            //    });
-            // }
-            // else {
-            //    create();
-            // }
-            // user_patcher_factory->patchUser(this, user_friend, false,[=,&user_friend](User user_patched)mutable{
-            //     user_friend = user_patched;
-            //     ChatPreviewButton* preview = new ChatPreviewButton(user_friend, ui->scrollAreaWidgetContents_friend);
-            //     preview->unique_text = user_friend.state;
-            //     preview->updateState();
-            //     vl->insertWidget(2, preview);
-            //     connect(preview, &ChatPreviewButton::clicked, preview, [=]() {
-            //         addUserDetailWidget(preview->m_user);
-            //      });
-            // });
             ChatPreviewButton* preview = new ChatPreviewButton(user_friend, ui->scrollAreaWidgetContents_friend);
             preview->unique_text = user_friend.state;
             preview->updateState();
@@ -1862,26 +1848,7 @@ void MainWindow::updateGroupList()
     QVBoxLayout* vl=dynamic_cast<QVBoxLayout*>(ui->scrollAreaWidgetContents_group->layout());
     if(vl){
         for(Group& group:m_user.groups){
-            //auto create = [=,&group]() {
-            //    ChatPreviewButton* preview = new ChatPreviewButton(group, ui->scrollAreaWidgetContents_group);
-            //    preview->unique_text = group.intro;
-            //    preview->updateState();
-            //    vl->insertWidget(2, preview);
-            //    connect(preview, &ChatPreviewButton::clicked, preview, [=]() {
-            //        addGroupDetailWidget(group);
-            //        });
-            //    };
-            //if(group.isEmpty() ){
 
-            //    user_patcher_factory->patchGroup(group,true,[=,&group](Group group_patched)mutable{
-            //        group = group_patched;
-            //        create();
-            //    });
-
-            //}
-            //else {
-            //    create();
-            //}
             ChatPreviewButton* preview = new ChatPreviewButton(group, ui->scrollAreaWidgetContents_group);
             preview->unique_text = group.intro;
             preview->updateState();
@@ -1889,16 +1856,6 @@ void MainWindow::updateGroupList()
             connect(preview, &ChatPreviewButton::clicked, preview, [=]() {
                 addGroupDetailWidget(group);
             });
-            // user_patcher_factory->patchGroup(this, group,false,[=,&group](Group group_patched)mutable{
-            //     group = group_patched;
-            //     ChatPreviewButton* preview = new ChatPreviewButton(group, ui->scrollAreaWidgetContents_group);
-            //     preview->unique_text = group.intro;
-            //     preview->updateState();
-            //     vl->insertWidget(2, preview);
-            //     connect(preview, &ChatPreviewButton::clicked, preview, [=]() {
-            //         addGroupDetailWidget(group);
-            //         });
-            // });
         }
     }else{
         qDebug()<<"ui->scrollAreaWidgetContents_group->layout()类型转换失败";
@@ -1937,40 +1894,65 @@ void MainWindow::adjustPreviewButtonSize(AdjustPreviewButtonSize mod, ChatPrevie
     }
 }
 
-void MainWindow::showCameraWidget(const int& id_sender)
+void MainWindow::showCameraWidget(const int& id_other)
 {
-    if(m_camera_widget){
-        delete m_camera_widget;
+    if(m_p_camera_widget){
+        delete m_p_camera_widget;
     }
-    m_camera_widget = new CameraWidget;
-    m_camera_widget->setAttribute(Qt::WA_DeleteOnClose);
-    connect(m_camera_widget,&CameraWidget::outputImage,this,[=](const QImage& image){
-        QByteArray data;
-        QBuffer buffer(&data);
-        buffer.open(QIODevice::WriteOnly);
-        if(image.save(&buffer,"JPEG")){
-            // qDebug()<<"outputImage size"<<data.size();
-            if(m_camera_widget->isConnected()){
-                sendFile(id_sender,data,'i');
-            }
-
-            // QByteArray packet = QString("*i**%1*").arg(id_sender).toUtf8() + data;
-            // mutex_ip.lockForRead();
-            // m_socket_udp->writeDatagram(packet,QHostAddress(hostip),hostport);
-            // mutex_ip.unlock();
+    m_p_camera_widget = new CameraWidget;
+    m_p_camera_widget->setAttribute(Qt::WA_DeleteOnClose);
+    if(m_p_encoder){
+        m_p_encoder->stop();
+        m_p_encoder->wait();
+        delete m_p_encoder;
+    }
+    m_p_encoder = new VideoEncoder(m_p_camera_widget->width(), m_p_camera_widget->height(), 30);
+    updateVideoResolution();
+    connect(m_p_camera_widget, &CameraWidget::outputImage, m_p_encoder, [=](const QImage& image){
+        m_p_encoder->pushFrame(image);
+    }, Qt::QueuedConnection);
+    connect(m_p_camera_widget,&CameraWidget::acceptVideo,this,[=](){
+        showTip("视频通话已接通");
+        QByteArray packet = QString("*u**%1**%2*").arg(m_user.id).arg(id_other).toUtf8();
+        mutex_ip.lockForRead();
+        QHostAddress ip(hostip);
+        quint16 port(hostport);
+        mutex_ip.unlock();
+        sendUdpMsg(packet, ip, port);
+    });
+    connect(m_p_camera_widget,&CameraWidget::hangUp,this,[=](const QTime& time){
+        sendMsg(id_other, "", 'h');
+        sendVideoOverMsg(id_other,time);
+        m_p_encoder->stop();
+        m_p_encoder->wait();
+        delete m_p_encoder;
+    });
+    connect(m_p_encoder, &VideoEncoder::newPacket, this, [=](const QByteArray& data){
+        if(m_p_camera_widget && m_p_camera_widget->isConnected()){
+            QByteArray packet = QString("*i**%1*").arg(id_other).toUtf8() + data;
+            mutex_ip.lockForRead();
+            QHostAddress ip(hostip);
+            quint16 port(hostport);
+            mutex_ip.unlock();
+            sendUdpMsg(packet, ip, port);
         }else{
-            qDebug()<<"缓冲区写入失败";
+            qDebug()<<"视频通话窗口未接通";
         }
     });
-    connect(m_camera_widget,&CameraWidget::acceptVideo,this,[=](){
-        showTip("视频通话已接通");
-        sendMsg(id_sender,"",'u');
-    });
-    connect(m_camera_widget,&CameraWidget::hangUp,this,[=](const QTime& time){
-        sendMsg(id_sender,"",'h');
-        sendVideoOverMsg(id_sender,time);
-    });
-    m_camera_widget->show();
+    m_p_encoder->start();
+    m_p_camera_widget->show();
+    m_p_camera_widget->startCapture();
+}
+
+void MainWindow::updateVideoResolution()
+{
+    static QRegularExpression exp("[*x]");
+    QStringList list = ui->combo_resolution->currentText().split(exp, Qt::SkipEmptyParts);
+    int width = list.first().toInt();
+    int height = list.last().toInt();
+    if(m_p_encoder){
+        m_p_encoder->setTargetResolution(width, height);
+    }
 }
 
 void MainWindow::createGroup()
@@ -2014,10 +1996,51 @@ void MainWindow::createGroup()
     dlg->show();
 }
 
+void MainWindow::sendMultiThreadFile(OBJ oj, int id_receiver, QString filePath, int threadCount)
+{
+    QFile file(filePath);
+    if (!file.exists() || !file.open(QIODevice::ReadOnly)) {
+        showTip("文件无法打开或不存在");
+        return;
+    }
+
+    qint64 totalSize = file.size();
+    file.close(); // 获取完大小后关闭，让分片线程自己去读
+    // 生成基于时间戳和文件名的唯一 FileID
+    QString fileName = QFileInfo(filePath).fileName();
+    QString fileID = QString("%1_%2_%3")
+                         .arg(m_user.id)
+                         .arg(QDateTime::currentMSecsSinceEpoch())
+                         .arg(fileName);
+    // 分片大小
+    qint64 chunkSize = totalSize / threadCount;
+    qDebug() << "开始分片发送:" << fileName << "总大小:" << totalSize << "线程数:" << threadCount;
+    for (int i = 0; i < threadCount; ++i) {
+        qint64 offset = i * chunkSize;
+        // 如果是最后一个线程，负责发送剩余的所有字节（处理除不尽的情况）
+        qint64 actualChunk = (i == threadCount - 1) ? (totalSize - offset) : chunkSize;
+        // 创建分片发送线程
+        FileSenderThread* worker = new FileSenderThread(
+            oj,
+            id_receiver,
+            m_user.id,
+            fileID,
+            filePath,
+            offset,
+            actualChunk,
+            totalSize
+            );
+        connect(worker, &QThread::finished, worker, &QObject::deleteLater);
+        worker->start();
+    }
+
+    showTip(QString("正在发送文件，启动了%1个线程").arg(threadCount));
+}
+
 
 QString MainWindow::handleDataHead(QByteArray &data, const QChar &split)
 {
-    QString result;
+    QByteArray result;
     int counter=0;
 
     data = data.mid(1);//移除"*"
@@ -2030,6 +2053,6 @@ QString MainWindow::handleDataHead(QByteArray &data, const QChar &split)
             result.append(c);
         }
     }
-    return result;
+    return QString::fromUtf8(result);
 }
 

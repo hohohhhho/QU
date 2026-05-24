@@ -22,16 +22,20 @@ public:
     }type;
     explicit ChatWidget(QWidget *parent = nullptr);
     ~ChatWidget();
+    void resizeEvent(QResizeEvent* ev)override;
 
     void init(User my_user, User other_user, QList<Message> list_msg={});//初始化为私聊聊天窗口
     void init(User my_user, Group group, QList<Message> list_msg={});//初始化为群聊聊天窗口
-    void addMsg(const QByteArray &msg, bool my, bool unread=false, bool save=true);//添加私聊消息
-    void addMsg(const QByteArray &msg, User sender, bool unread=false, bool save=true);//添加群聊消息
+    // void addMsg(const QByteArray &msg, bool my, bool unread=false, bool save=true);//添加私聊消息
+    // void addMsg(const QByteArray &msg, User sender, bool unread=false, bool save=true);//添加群聊消息
+    void addMsg(const Message &msg, bool unread=false, bool save=true);//添加私聊消息
+    void addMsg(const Message &msg, User sender, bool unread=false, bool save=true);//添加群聊消息
     void updateScrollBar();//更新滚动条到最下方
-
+    // void showFile(const QString &filename, bool myself);
 signals:
     void sendMsg(const QString& text);
     void sendFile(const QByteArray& data);
+    void sendFile_(const QString& filePath);
     void call(const int& id);
     void toDelete();
     void refresh();

@@ -1,4 +1,4 @@
-QT       += core gui network sql multimedia
+QT       += core gui network sql multimedia multimediawidgets
 RC_ICONS += chat.ico
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -12,6 +12,7 @@ SOURCES += \
     abstractthread.cpp \
     appupdater.cpp \
     chatpreviewbutton.cpp \
+    filesenderthread.cpp \
     groupdetail.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -23,12 +24,14 @@ SOURCES += \
     sqlqueryfactory.cpp \
     userdetail.cpp \
     userpatcher.cpp \
-    userpatcherfactory.cpp
+    userpatcherfactory.cpp \
+    viodeencoder.cpp
 
 HEADERS += \
     abstractthread.h \
     appupdater.h \
     chatpreviewbutton.h \
+    filesenderthread.h \
     groupdetail.h \
     macro.h \
     mainwindow.h \
@@ -40,7 +43,8 @@ HEADERS += \
     sqlqueryfactory.h \
     userdetail.h \
     userpatcher.h \
-    userpatcherfactory.h
+    userpatcherfactory.h \
+    viodeencoder.h
 
 FORMS += \
     groupdetail.ui \
